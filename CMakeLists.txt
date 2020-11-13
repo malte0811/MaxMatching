@@ -6,7 +6,10 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Werror")
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(COMMON_SOURCES src/graph.hpp src/graph.cpp src/union_find.cpp src/union_find.hpp src/matching.cpp src/matching.h src/nested_shrunken_graph.cpp src/nested_shrunken_graph.h test/ShrinkerTest.cpp)
+set(COMMON_SOURCES
+        src/graph.hpp src/graph.cpp src/union_find.cpp src/union_find.hpp src/matching.cpp src/matching.h
+        src/nested_shrinking.cpp src/nested_shrinking.h src/alternating_tree.cpp
+        src/alternating_tree.h src/perfect_matching_algorithm.cpp src/perfect_matching_algorithm.h)
 
 add_executable(MaxMatching src/main.cpp ${COMMON_SOURCES})
 
@@ -18,7 +21,7 @@ find_package(Boost 1.67 REQUIRED COMPONENTS unit_test_framework)
 # indicates the location of the boost installation tree.
 # hard-coded for our simple example.
 set(BOOST_INCLUDE_DIRS /etc/include)
-add_executable(Test test/MatchingTest.cpp ${COMMON_SOURCES} test/TestMain.cpp)
+add_executable(Test test/ShrinkerTest.cpp test/MatchingTest.cpp test/TestMain.cpp ${COMMON_SOURCES})
 
 target_include_directories(Test PRIVATE ${BOOST_INCLUDE_DIRS})
 target_compile_definitions(Test PRIVATE "BOOST_TEST_DYN_LINK=1")
