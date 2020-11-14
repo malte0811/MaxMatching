@@ -14,6 +14,7 @@
 
 using size_type = uint32_t;
 using NodeId = size_type;
+using EdgeSet = std::vector<std::pair<NodeId, NodeId>>;
 
 /**
    @class Node

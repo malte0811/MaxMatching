@@ -17,26 +17,29 @@ public:
 
     void add_to_matching(Representative end_a, Representative end_b);
 
-    void augment_along(std::vector<Representative> const& path);
+    void augment_along(std::vector<Representative> const& path, std::vector<std::pair<NodeId, NodeId>> const& edges);
 
-    void shrink(VertexSet const& circuit_to_shrink, Representative new_name);
+    // R(circuit_edges[i+1].first) == R(circuit_edges[i].second) == circuit_to_shrink[i]
+    void shrink(VertexSet const& circuit_to_shrink, EdgeSet&& circuit_edges, Representative new_name);
 
     void expand(
             Representative current_name,
             VertexSet const& expanded_circuit,
-            std::optional<Representative> const& covered_vertex
+            NestedShrinking const& shrinking
     );
 
-    Representative other_end(Representative known_end);
+    [[nodiscard]] Representative other_end(Representative known_end) const;
 
     [[nodiscard]] size_t total_num_nodes() const;
 
 private:
-
     void match_unchecked(Representative end_a, Representative end_b);
 
+    void validate(std::optional<NestedShrinking> const& shrinking = std::nullopt) const;
+
     std::vector<Representative> _matched_vertices;
-    size_t _cardinality_at_shrinking_step;
+    std::vector<NodeId> _real_vertex_used_for;
+    std::vector<EdgeSet> _shrink_data;
 };
 
 

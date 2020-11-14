@@ -7,11 +7,11 @@ class AlternatingTree {
 public:
     AlternatingTree(Matching matching, NodeId root_node);
 
-    std::vector<NodeId> shrink_fundamental_circuit(Representative end_a, Representative end_b);
+    std::vector<NodeId> shrink_fundamental_circuit(Representative repr_a, Representative repr_b, NodeId node_a, NodeId node_b);
 
-    Matching&& augment_and_unshrink(Representative tree_node, Representative unmatched_neighbor);
+    Matching&& augment_and_unshrink(Representative tree_repr, NodeId tree_node, Representative neighbor);
 
-    void extend(Representative tree_node, Representative matched_neighbor);
+    void extend(Representative tree_repr, Representative matched_repr, NodeId tree_node);
 
     Representative get_representative(NodeId node) const;
 
@@ -22,9 +22,13 @@ public:
     bool is_even(Representative node) const;
 
 private:
+    struct Parent {
+        NodeId edge_end_here;
+        NodeId edge_end_parent;
+    };
     struct ExtraShrinkData {
-        // Potentially better structure: vector<Representative> mapping non-circuit vertex to circuit neighbor
-        std::vector<std::vector<Representative>> circuit_neighbors_in_tree;
+        Representative top_node;
+        Parent old_shrink_parent;
     };
     enum NodeStatus {
         not_in_tree,
@@ -41,14 +45,16 @@ private:
 
     bool is_root(Representative node) const;
 
-    void set_parent(Representative node, Representative parent);
+    void set_parent(Representative node, Representative parent_rep, NodeId parent, NodeId link);
 
-    Representative get_parent(Representative node) const;
+    Representative get_parent_repr(Representative node) const;
+
+    std::pair<NodeId, NodeId> get_edge_to_parent(Representative node) const;
 
     Matching _current_matching;
     NestedShrinking _shrinking;
     std::vector<ExtraShrinkData> _shrink_stack;
-    std::vector<NodeId> _parent_node;
+    std::vector<Parent> _parent_node;
     std::vector<std::vector<NodeId>> _children;
     std::vector<NodeStatus> _node_states;
 };

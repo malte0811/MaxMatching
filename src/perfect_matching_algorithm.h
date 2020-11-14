@@ -17,7 +17,7 @@ public:
 private:
     [[nodiscard]] std::optional<NodeId> find_uncovered_vertex() const;
 
-    void add_non_tree_edges(NodeId node, AlternatingTree const& tree);
+    void add_incident_edges(NodeId node);
 
     EdgeList _open_edges;
     Matching _current_matching;
