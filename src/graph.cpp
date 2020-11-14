@@ -14,10 +14,6 @@ NodeId from_dimacs_id(size_type dimacs_node_id) {
     return dimacs_node_id - 1;
 }
 
-size_type to_dimacs_id(NodeId node_id) {
-    return node_id + 1;
-}
-
 // Returns the first line which is not a comment, i.e. does not start with c.
 std::string read_next_non_comment_line(std::istream& input) {
     std::string line;
@@ -39,6 +35,18 @@ void Node::add_neighbor(NodeId const id) {
     _neighbors.push_back(id);
 }
 
+void Node::remap_neighbors(std::vector<NodeId> const& mapper, NodeId const new_node_count) {
+    size_t new_num_neighbors = 0;
+    for (auto const& neighbor : _neighbors) {
+        auto const& mapped = mapper.at(neighbor);
+        if (mapped < new_node_count) {
+            _neighbors.at(new_num_neighbors) = mapped;
+            ++new_num_neighbors;
+        }
+    }
+    _neighbors.resize(new_num_neighbors);
+}
+
 /////////////////////////////////////////////
 //! \c Graph definitions
 /////////////////////////////////////////////
@@ -49,7 +57,7 @@ void Node::add_neighbor(NodeId const id) {
 // Note you should initialize them in the same order
 // they were declare in back in the class body!
 Graph::Graph(NodeId const num_nodes)
-        : _nodes(num_nodes), _num_edges(0) {}
+        : _nodes(num_nodes) {}
 
 void Graph::add_edge(NodeId node1_id, NodeId node2_id) {
     if (node1_id == node2_id) {
@@ -58,7 +66,6 @@ void Graph::add_edge(NodeId node1_id, NodeId node2_id) {
 
     _nodes[node1_id].add_neighbor(node2_id);
     _nodes[node2_id].add_neighbor(node1_id);
-    ++_num_edges;
 }
 
 Graph Graph::read_dimacs(std::istream& input) {
@@ -93,20 +100,21 @@ Graph Graph::read_dimacs(std::istream& input) {
     return graph;
 }
 
-std::ostream& operator<<(std::ostream& output, Graph const& graph) {
-    output << "p edge " << graph.num_nodes() << " " << graph.num_edges() << std::endl;
-
-    // We will need the id of the node we are at, so we write a plain old loop here.
-    for (NodeId node_id = 0; node_id < graph.num_nodes(); ++node_id) {
-        Node const& node = graph.node(node_id);
-        for (NodeId const& neighbor_id : node.neighbors()) {
-            // Note we iterate over each edge two times, so we use the following
-            // comparism to check if the edge was not yet written to str!
-            if (node_id < neighbor_id) {
-                output << "e " << to_dimacs_id(node_id) << " " << to_dimacs_id(neighbor_id) << std::endl;
-            }
+std::vector<NodeId> Graph::delete_nodes(std::vector<bool> const& should_remove) {
+    NodeId new_num_nodes = 0;
+    std::vector<NodeId> id_mapper;
+    std::vector<NodeId> inverse_id_mapper(num_nodes(), num_nodes());
+    for (NodeId i = 0; i < num_nodes(); ++i) {
+        if (should_remove.at(i)) {
+            _nodes.at(new_num_nodes) = std::move(_nodes.at(i));
+            inverse_id_mapper.at(i) = new_num_nodes;
+            id_mapper.push_back(i);
+            ++new_num_nodes;
         }
     }
-
-    return output;
+    for (NodeId i = 0; i < new_num_nodes; ++i) {
+        _nodes.at(i).remap_neighbors(inverse_id_mapper, new_num_nodes);
+    }
+    _nodes.resize(new_num_nodes);
+    return id_mapper;
 }

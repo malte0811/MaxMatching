@@ -5,21 +5,23 @@
 
 class AlternatingTree {
 public:
-    AlternatingTree(Matching matching, NodeId root_node);
+    AlternatingTree(Matching& matching, NodeId root_node);
 
     std::vector<NodeId> shrink_fundamental_circuit(Representative repr_a, Representative repr_b, NodeId node_a, NodeId node_b);
 
-    Matching&& augment_and_unshrink(Representative tree_repr, NodeId tree_node, Representative neighbor);
+    void augment_and_unshrink(Representative tree_repr, NodeId tree_node, Representative neighbor);
+
+    void unshrink();
 
     void extend(Representative tree_repr, Representative matched_repr, NodeId tree_node);
 
     Representative get_representative(NodeId node) const;
 
-    bool is_tree_edge(Representative node_a, Representative node_b) const;
-
     bool is_tree_node(Representative node) const;
 
     bool is_even(Representative node) const;
+
+    void reset(NodeId root_node);
 
 private:
     struct Parent {
@@ -51,11 +53,10 @@ private:
 
     std::pair<NodeId, NodeId> get_edge_to_parent(Representative node) const;
 
-    Matching _current_matching;
+    Matching& _current_matching;
     NestedShrinking _shrinking;
     std::vector<ExtraShrinkData> _shrink_stack;
     std::vector<Parent> _parent_node;
-    std::vector<std::vector<NodeId>> _children;
     std::vector<NodeStatus> _node_states;
 };
 

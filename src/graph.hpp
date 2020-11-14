@@ -46,6 +46,8 @@ private:
    **/
    void add_neighbor(NodeId id);
 
+   void remap_neighbors(std::vector<NodeId> const& mapper, NodeId new_node_count);
+
    std::vector<NodeId> _neighbors;
 }; // class Node
 
@@ -76,9 +78,6 @@ public:
    /** @return The number of nodes in the graph. **/
    [[nodiscard]] NodeId num_nodes() const;
 
-   /** @return The number of edges in the graph. **/
-   [[nodiscard]] size_type num_edges() const;
-
    /**
       @return A reference to the id-th entry in the array of @c Node s of this graph.
    **/
@@ -94,7 +93,14 @@ public:
    **/
    void add_edge(NodeId node1_id, NodeId node2_id);
 
-   // Static functions are not called on an object of the class, but on the class itself.
+   /**
+    * Removes a set of nodes (and all incident edges) from the graph
+    * @param should_remove vector of length num_nodes(). true indicates that the node should be removed.
+    * @return A vector mapping the new node index of each remaining node to the old index, i.e.
+    * result[new_node_id] == old_node_id
+    */
+   std::vector<NodeId> delete_nodes(std::vector<bool> const& should_remove);
+
    /**
     * Reads a graph in DIMACS format from the given istream and returns that graph.
     */
@@ -105,7 +111,6 @@ public:
    friend std::ostream & operator<<(std::ostream & str, Graph const & graph);
 private:
    std::vector<Node> _nodes;
-   size_type _num_edges;
 }; // class Graph
 //BEGIN: Inline section
 
@@ -125,12 +130,6 @@ inline
 NodeId Graph::num_nodes() const
 {
    return _nodes.size();
-}
-
-inline
-size_type Graph::num_edges() const
-{
-   return _num_edges;
 }
 
 inline

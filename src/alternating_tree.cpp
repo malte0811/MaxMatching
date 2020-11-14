@@ -107,14 +107,18 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
     //TODO clean up
     std::vector<NodeId> odd_nodes;
     odd_nodes.reserve(odd_cycle.size() / 2);
+#ifdef DEBUG_PRINT
     std::cout << "Shrinking ";
+    for (auto const& node : odd_cycle) {
+        std::cout << node.id() << " ";
+    }
+    std::cout << '\n';
+#endif
     for (auto const& node : odd_cycle) {
         if (not is_even(node)) {
             odd_nodes.push_back(node.id());
         }
-        std::cout << node.id() << " ";
     }
-    std::cout << '\n';
     auto const top_state = get_state(top_node);
     auto const& top_parent = _parent_node.at(top_node.id());
     auto const& shrunken_node = _shrinking.shrink(odd_cycle);
@@ -140,7 +144,7 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
     return odd_nodes;
 }
 
-Matching&& AlternatingTree::augment_and_unshrink(Representative tree_repr, NodeId tree_node, Representative neighbor) {
+void AlternatingTree::augment_and_unshrink(Representative tree_repr, NodeId tree_node, Representative neighbor) {
     assert(get_representative(tree_repr.id()) == tree_repr);
     assert(get_representative(neighbor.id()) == neighbor);
     assert(not _current_matching.is_matched(neighbor));
@@ -148,9 +152,15 @@ Matching&& AlternatingTree::augment_and_unshrink(Representative tree_repr, NodeI
     EdgeSet path_edges{{neighbor.id(), tree_node}};
     while (not is_root(path_to_root.back())) {
         path_edges.push_back(get_edge_to_parent(path_to_root.back()));
-        path_to_root.push_back(get_parent_repr(path_to_root.back()));
+        auto const& next_node = get_parent_repr(path_to_root.back());
+        assert(std::find(path_to_root.begin(), path_to_root.end(), next_node) == path_to_root.end());
+        path_to_root.push_back(next_node);
     }
     _current_matching.augment_along(path_to_root, path_edges);
+    unshrink();
+}
+
+void AlternatingTree::unshrink() {
     while (_shrinking.is_shrunken()) {
         auto const&[odd_cycle, pseudo_node] = _shrinking.expand();
         auto const& shrink_data = _shrink_stack.back();
@@ -159,12 +169,15 @@ Matching&& AlternatingTree::augment_and_unshrink(Representative tree_repr, NodeI
         _parent_node.at(shrink_data.top_node.id()) = shrunk_parent;
         shrunk_parent = shrink_data.old_shrink_parent;
 
+#ifdef DEBUG_PRINT
         std::cout << "Expanding cycle ";
-        for (auto const& node : odd_cycle) std::cout << node.id() << " ";
+        for (auto const& node : odd_cycle) {
+            std::cout << node.id() << " ";
+        }
         std::cout << "from " << pseudo_node.id() << '\n';
+#endif
         _current_matching.expand(pseudo_node, odd_cycle, _shrinking);
     }
-    return std::move(_current_matching);
 }
 
 AlternatingTree::NodeStatus AlternatingTree::get_state(Representative node) const {
@@ -190,7 +203,6 @@ Representative AlternatingTree::get_parent_repr(Representative node) const {
 void AlternatingTree::set_parent(Representative node, Representative parent_rep, NodeId parent, NodeId link) {
     assert(is_tree_node(parent_rep));
     assert(not is_tree_node(node));
-    _children.at(parent_rep.id()).push_back(node.id());
     _parent_node.at(node.id()) = {link, parent};
     if (is_even(parent_rep)) {
         set_state(node, odd);
@@ -203,26 +215,16 @@ bool AlternatingTree::is_root(Representative node) const {
     return get_state(node) == root;
 }
 
-AlternatingTree::AlternatingTree(Matching matching, NodeId root_node)
-        : _current_matching(std::move(matching)),
+AlternatingTree::AlternatingTree(Matching& matching, NodeId root_node)
+        : _current_matching(matching),
           _shrinking(_current_matching.total_num_nodes()),
           _parent_node(_current_matching.total_num_nodes()),
-          _children(_current_matching.total_num_nodes()),
-          _node_states(_current_matching.total_num_nodes(), not_in_tree) {
-    std::fill(_parent_node.begin(), _parent_node.end(), Parent{0, 0});
-    _node_states.at(root_node) = root;
+          _node_states(_current_matching.total_num_nodes()) {
+    reset(root_node);
 }
 
 Representative AlternatingTree::get_representative(NodeId node) const {
     return _shrinking.get_representative(node);
-}
-
-bool AlternatingTree::is_tree_edge(Representative node_a, Representative node_b) const {
-    if (is_tree_node(node_a) and is_tree_node(node_b)) {
-        return get_parent_repr(node_a) == node_b or get_parent_repr(node_b) == node_a;
-    } else {
-        return false;
-    }
 }
 
 bool AlternatingTree::is_tree_node(Representative node) const {
@@ -232,4 +234,11 @@ bool AlternatingTree::is_tree_node(Representative node) const {
 std::pair<NodeId, NodeId> AlternatingTree::get_edge_to_parent(Representative node) const {
     auto const& parent = _parent_node.at(node.id());
     return {parent.edge_end_here, parent.edge_end_parent};
+}
+
+void AlternatingTree::reset(NodeId root_node) {
+    assert(not _shrinking.is_shrunken());
+    std::fill(_parent_node.begin(), _parent_node.end(), Parent{0, 0});
+    std::fill(_node_states.begin(), _node_states.end(), not_in_tree);
+    _node_states.at(root_node) = root;
 }

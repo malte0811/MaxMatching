@@ -32,6 +32,8 @@ public:
 
     [[nodiscard]] size_t total_num_nodes() const;
 
+    [[nodiscard]] EdgeSet get_matching_edges() const;
+
 private:
     void match_unchecked(Representative end_a, Representative end_b);
 

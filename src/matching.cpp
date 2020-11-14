@@ -91,7 +91,9 @@ void Matching::expand(
     if (is_matched(current_name)) {
         auto const& matched_to = other_end(current_name);
         auto const& covered_vertex = shrinking.get_representative(_real_vertex_used_for.at(current_name.id()));
+#ifdef DEBUG_PRINT
         std::cout << "Unshrinking: covered vertex is " << covered_vertex.id() << '\n';
+#endif
         _real_vertex_used_for.at(covered_vertex.id()) = _real_vertex_used_for.at(current_name.id());
         match_unchecked(matched_to, covered_vertex);
         bool found_offset = false;
@@ -144,4 +146,18 @@ void Matching::validate([[maybe_unused]]std::optional<NestedShrinking> const& sh
         }
     }
 #endif
+}
+
+EdgeSet Matching::get_matching_edges() const {
+    assert(_shrink_data.empty());
+    EdgeSet matching_edges;
+    for (NodeId i = 0; i < _matched_vertices.size(); ++i) {
+        if (is_matched(Representative(i))) {
+            auto const& other = other_end(Representative(i));
+            if (i < other.id()) {
+                matching_edges.push_back({i, other.id()});
+            }
+        }
+    }
+    return matching_edges;
 }
