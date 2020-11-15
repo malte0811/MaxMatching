@@ -1,7 +1,9 @@
-#include "graph.hpp"
+#include "graph.h"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <algorithm>
+#include <cassert>
 
 namespace {
 
@@ -105,11 +107,15 @@ std::vector<NodeId> Graph::delete_nodes(std::vector<bool> const& should_remove) 
     std::vector<NodeId> id_mapper;
     std::vector<NodeId> inverse_id_mapper(num_nodes(), num_nodes());
     for (NodeId i = 0; i < num_nodes(); ++i) {
-        if (should_remove.at(i)) {
-            _nodes.at(new_num_nodes) = std::move(_nodes.at(i));
+        assert(new_num_nodes <= i);
+        if (not should_remove.at(i)) {
+            if (i != new_num_nodes) {
+                _nodes.at(new_num_nodes) = std::move(_nodes.at(i));
+            }
             inverse_id_mapper.at(i) = new_num_nodes;
             id_mapper.push_back(i);
             ++new_num_nodes;
+            assert(id_mapper.size() == new_num_nodes);
         }
     }
     for (NodeId i = 0; i < new_num_nodes; ++i) {
@@ -117,4 +123,34 @@ std::vector<NodeId> Graph::delete_nodes(std::vector<bool> const& should_remove) 
     }
     _nodes.resize(new_num_nodes);
     return id_mapper;
+}
+
+Graph Graph::shuffle_with_seed(unsigned long seed) const {
+    Graph result(num_nodes());
+    std::vector<NodeId> map(num_nodes());
+    std::iota(map.begin(), map.end(), 0);
+    std::mt19937 random(seed);
+    std::shuffle(map.begin(), map.end(), random);
+    for (NodeId i = 0; i < num_nodes(); ++i) {
+        auto const& mapped = map.at(i);
+        for (auto const& neighbor : node(i).neighbors()) {
+            result.add_edge(mapped, map.at(neighbor));
+        }
+    }
+    for (NodeId i = 0; i < num_nodes(); ++i) {
+        auto& node = result._nodes.at(i)._neighbors;
+        std::sort(node.begin(), node.end());
+    }
+    return result;
+}
+
+Graph Graph::with_extra_all_edge_vertices(NodeId extra_vertices) const {
+    Graph result = *this;
+    result._nodes.resize(num_nodes() + extra_vertices);
+    for (NodeId new_node_id = num_nodes(); new_node_id < result.num_nodes(); ++new_node_id) {
+        for (NodeId neighbor = 0; neighbor < num_nodes(); ++neighbor) {
+            result.add_edge(neighbor, new_node_id);
+        }
+    }
+    return result;
 }

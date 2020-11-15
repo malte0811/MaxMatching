@@ -114,7 +114,7 @@ void Matching::expand(
         match_unchecked(vertex_a, vertex_b);
         std::tie(_real_vertex_used_for.at(vertex_a.id()), _real_vertex_used_for.at(vertex_b.id())) = circuit_edges.at(next_id);
     }
-    validate(shrinking);
+    validate(&shrinking);
 }
 
 void Matching::match_unchecked(Representative end_a, Representative end_b) {
@@ -133,7 +133,7 @@ size_t Matching::total_num_nodes() const {
     return _matched_vertices.size();
 }
 
-void Matching::validate([[maybe_unused]]std::optional<NestedShrinking> const& shrinking) const{
+void Matching::validate([[maybe_unused]]NestedShrinking const* shrinking) const{
 #ifndef NDEBUG
     for (NodeId i = 0; i < total_num_nodes(); ++i) {
         if (is_matched(Representative(i))) {

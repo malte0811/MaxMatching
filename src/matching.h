@@ -4,7 +4,7 @@
 
 #include <vector>
 #include <optional>
-#include "graph.hpp"
+#include "graph.h"
 #include "nested_shrinking.h"
 
 class Matching {
@@ -37,7 +37,8 @@ public:
 private:
     void match_unchecked(Representative end_a, Representative end_b);
 
-    void validate(std::optional<NestedShrinking> const& shrinking = std::nullopt) const;
+    // Use pointer instead of std::optional to avoid copies when the function is disabled (in release mode)
+    void validate(NestedShrinking const* shrinking = nullptr) const;
 
     std::vector<Representative> _matched_vertices;
     std::vector<NodeId> _real_vertex_used_for;

@@ -1,7 +1,7 @@
 #ifndef MAXMATCHING_NESTED_SHRINKING_H
 #define MAXMATCHING_NESTED_SHRINKING_H
 
-#include "graph.hpp"
+#include "graph.h"
 #include "union_find.hpp"
 
 class Representative {

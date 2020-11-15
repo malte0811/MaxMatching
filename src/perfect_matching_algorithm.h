@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <optional>
-#include "graph.hpp"
+#include "graph.h"
 #include "matching.h"
 #include "alternating_tree.h"
 

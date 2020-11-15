@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <limits>
 #include <vector>
+#include <random>
 
 using size_type = uint32_t;
 using NodeId = size_type;
@@ -101,14 +102,14 @@ public:
     */
    std::vector<NodeId> delete_nodes(std::vector<bool> const& should_remove);
 
+   Graph shuffle_with_seed(unsigned long seed) const;
+
+   Graph with_extra_all_edge_vertices(NodeId extra_vertices) const;
+
    /**
     * Reads a graph in DIMACS format from the given istream and returns that graph.
     */
    static Graph read_dimacs(std::istream & str);
-   /**
-     @brief Prints the graph to the given ostream in DIMACS format.
-   **/
-   friend std::ostream & operator<<(std::ostream & str, Graph const & graph);
 private:
    std::vector<Node> _nodes;
 }; // class Graph

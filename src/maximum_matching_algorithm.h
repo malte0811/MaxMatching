@@ -2,7 +2,7 @@
 #define MAXMATCHING_MAXIMUM_MATCHING_ALGORITHM_H
 
 
-#include "graph.hpp"
+#include "graph.h"
 
 class MaximumMatchingAlgorithm {
 public:
@@ -10,6 +10,10 @@ public:
 
     EdgeSet calc_maximum_matching();
 private:
+    void shrink(std::vector<bool> const& to_remove, std::vector<NodeId>& node_map);
+
+    void delete_isolated_nodes(std::vector<NodeId>& node_map);
+
     Graph _graph;
 };
 
