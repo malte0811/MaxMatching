@@ -9,17 +9,18 @@
 
 class PerfectMatchingAlgorithm {
 public:
-    explicit PerfectMatchingAlgorithm(Graph const& graph);
+    explicit PerfectMatchingAlgorithm(Matching&& matching, Graph const& graph);
 
     [[nodiscard]] EdgeSet find_perfect_matching();
 
-    [[nodiscard]] std::pair<EdgeSet, std::optional<NodeId>> calc_matching_and_uncovered_root();
+    [[nodiscard]] std::pair<std::optional<std::vector<NodeId>>, Matching> calc_matching_and_uncovered_root();
 private:
     [[nodiscard]] std::optional<NodeId> find_uncovered_vertex() const;
 
     void add_incident_edges(NodeId node);
 
     EdgeSet _open_edges;
+    //TODO ref?
     Matching _current_matching;
     Graph const& _graph;
 };

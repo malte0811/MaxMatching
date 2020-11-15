@@ -12,6 +12,7 @@
 #include <limits>
 #include <vector>
 #include <random>
+#include <optional>
 
 using size_type = uint32_t;
 using NodeId = size_type;
@@ -47,7 +48,7 @@ private:
    **/
    void add_neighbor(NodeId id);
 
-   void remap_neighbors(std::vector<NodeId> const& mapper, NodeId new_node_count);
+   void remap_neighbors(std::vector<std::optional<NodeId>> const& mapper);
 
    std::vector<NodeId> _neighbors;
 }; // class Node

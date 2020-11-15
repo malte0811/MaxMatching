@@ -3,20 +3,22 @@
 #include "perfect_matching_algorithm.h"
 #include "alternating_tree.h"
 
-PerfectMatchingAlgorithm::PerfectMatchingAlgorithm(Graph const& graph)
-: _current_matching(graph.num_nodes()),
-_graph(graph) {}
+PerfectMatchingAlgorithm::PerfectMatchingAlgorithm(Matching&& matching, Graph const& graph)
+: _current_matching(std::move(matching)),
+_graph(graph) {
+    assert(_current_matching.total_num_nodes() == _graph.num_nodes());
+}
 
 EdgeSet PerfectMatchingAlgorithm::find_perfect_matching() {
-    auto const& [edges, exposed] = calc_matching_and_uncovered_root();
-    if (exposed.has_value()) {
+    auto const& [tree_vertices, matching] = calc_matching_and_uncovered_root();
+    if (tree_vertices) {
         throw std::runtime_error("Graph does not have a perfect matching");
     } else {
-        return edges;
+        return matching.get_matching_edges();
     }
 }
 
-std::pair<EdgeSet, std::optional<NodeId>> PerfectMatchingAlgorithm::calc_matching_and_uncovered_root() {
+std::pair<std::optional<std::vector<NodeId>>, Matching> PerfectMatchingAlgorithm::calc_matching_and_uncovered_root() {
     AlternatingTree tree_for_root(_current_matching, 0);
     while (auto const& next_root = find_uncovered_vertex()) {
 #ifdef DEBUG_PRINT
@@ -72,10 +74,10 @@ std::pair<EdgeSet, std::optional<NodeId>> PerfectMatchingAlgorithm::calc_matchin
         }
         if (not augmented) {
             tree_for_root.unshrink();
-            return {_current_matching.get_matching_edges(), next_root};
+            return {tree_for_root.get_tree_vertices(), _current_matching};
         }
     }
-    return {_current_matching.get_matching_edges(), std::nullopt};
+    return {std::nullopt, _current_matching};
 }
 
 std::optional<NodeId> PerfectMatchingAlgorithm::find_uncovered_vertex() const {

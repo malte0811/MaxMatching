@@ -22,6 +22,8 @@ void AlternatingTree::extend(Representative tree_repr, Representative matched_re
 std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative repr_a, Representative repr_b, NodeId node_a, NodeId node_b) {
     assert(get_representative(repr_a.id()) == repr_a);
     assert(get_representative(repr_b.id()) == repr_b);
+    assert(is_even(repr_a));
+    assert(is_even(repr_b));
     //TODO rewrite all of this mess, or at least separate it into various bits of mess
     //TODO speed up by using depth data?
     auto const& invalid_id = std::numeric_limits<size_t>::max();
@@ -102,7 +104,6 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
     cycle_edges.front().first = cycle_edges.back().first;
     cycle_edges.pop_back();
 
-
     assert(cycle_edges.size() == odd_cycle.size());
     //TODO clean up
     std::vector<NodeId> odd_nodes;
@@ -119,6 +120,8 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
             odd_nodes.push_back(node.id());
         }
     }
+    assert(odd_nodes.size() == odd_cycle.size() / 2);
+    assert(is_even(top_node));
     auto const top_state = get_state(top_node);
     auto const& top_parent = _parent_node.at(top_node.id());
     auto const& shrunken_node = _shrinking.shrink(odd_cycle);
@@ -200,10 +203,12 @@ Representative AlternatingTree::get_parent_repr(Representative node) const {
     return _shrinking.get_representative(_parent_node.at(node.id()).edge_end_parent);
 }
 
+//TODO node.id() always == link?
 void AlternatingTree::set_parent(Representative node, Representative parent_rep, NodeId parent, NodeId link) {
     assert(is_tree_node(parent_rep));
     assert(not is_tree_node(node));
     _parent_node.at(node.id()) = {link, parent};
+    _tree_vertices.push_back(node.id());
     if (is_even(parent_rep)) {
         set_state(node, odd);
     } else {
@@ -241,4 +246,10 @@ void AlternatingTree::reset(NodeId root_node) {
     std::fill(_parent_node.begin(), _parent_node.end(), Parent{0, 0});
     std::fill(_node_states.begin(), _node_states.end(), not_in_tree);
     _node_states.at(root_node) = root;
+    _tree_vertices.clear();
+    _tree_vertices.push_back(root_node);
+}
+
+std::vector<NodeId> AlternatingTree::get_tree_vertices() const {
+    return _tree_vertices;
 }

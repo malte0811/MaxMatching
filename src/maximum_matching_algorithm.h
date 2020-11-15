@@ -10,9 +10,9 @@ public:
 
     EdgeSet calc_maximum_matching();
 private:
-    void shrink(std::vector<bool> const& to_remove, std::vector<NodeId>& node_map);
+    void shrink(std::vector<bool> const& to_remove, std::vector<NodeId>& node_map, std::vector<std::optional<NodeId>>& reverse_node_map);
 
-    void delete_isolated_nodes(std::vector<NodeId>& node_map);
+    void delete_isolated_nodes(std::vector<NodeId>& node_map, std::vector<std::optional<NodeId>>& reverse_node_map);
 
     Graph _graph;
 };

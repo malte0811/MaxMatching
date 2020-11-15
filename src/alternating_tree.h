@@ -23,6 +23,7 @@ public:
 
     void reset(NodeId root_node);
 
+    [[nodiscard]] std::vector<NodeId> get_tree_vertices() const;
 private:
     struct Parent {
         NodeId edge_end_here;
@@ -58,6 +59,7 @@ private:
     std::vector<ExtraShrinkData> _shrink_stack;
     std::vector<Parent> _parent_node;
     std::vector<NodeStatus> _node_states;
+    std::vector<NodeId> _tree_vertices;
 };
 
 #endif //MAXMATCHING_ALTERNATING_TREE_H
