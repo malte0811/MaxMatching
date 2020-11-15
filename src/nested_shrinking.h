@@ -2,7 +2,6 @@
 #define MAXMATCHING_NESTED_SHRINKING_H
 
 #include "graph.h"
-#include "union_find.hpp"
 
 class Representative {
 public:
@@ -38,13 +37,26 @@ public:
 
     [[nodiscard]] bool is_shrunken() const;
 private:
+    struct SetReplacement {
+        Representative old_name;
+        std::vector<NodeId> affected_nodes;
+    };
     struct ShrinkStep {
-        UnionFind old_partition;
-        VertexSet shrunken_set;
-        Representative resulting_vertex;
+        Representative new_name;
+        std::vector<SetReplacement> elements;
     };
 
-    UnionFind _current_partition;
+    [[nodiscard]] size_t get_size(Representative const& set) const;
+
+    [[nodiscard]] std::vector<NodeId> const& get_elements(Representative const& set) const;
+
+    [[nodiscard]] std::vector<NodeId>& get_elements(Representative const& set);
+
+    void validate() const;
+
+    std::vector<Representative> _partition;
+    std::vector<std::vector<NodeId>> _set_elements;
+
     std::vector<ShrinkStep> _shrink_stack;
 };
 

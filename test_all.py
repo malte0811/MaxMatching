@@ -2,7 +2,7 @@
 import argparse
 from os import listdir
 import subprocess
-from typing import List
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument("binary")
@@ -40,12 +40,14 @@ known_optima = {
 
 for file in listdir(args.test_folder):
     print("Running on " + file)
+    start = time.time()
     output: bytes = subprocess.check_output([args.binary, args.test_folder + "/" + file])
+    duration = time.time() - start
     first_line: str = output.splitlines()[0].decode('utf-8')
     num_edges = int(first_line.split(" ")[-1])
     if file not in known_optima:
-        print("Unknown instance "+file+": "+str(num_edges)+" matching edges")
+        print("Unknown instance "+file+": "+str(num_edges)+" matching edges found in "+str(duration)+" s")
     elif num_edges != known_optima[file]:
         print("Wrong number of edges for "+file+": expected "+str(known_optima[file])+", found "+str(num_edges))
     else:
-        print("Solution matching expected optimum for "+file)
+        print("Solution matching expected optimum for "+file+" found in "+str(duration)+" s")
