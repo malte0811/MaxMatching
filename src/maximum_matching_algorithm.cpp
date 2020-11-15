@@ -16,9 +16,9 @@ EdgeSet MaximumMatchingAlgorithm::calc_maximum_matching() {
     bool is_maximum = false;
     while (not is_maximum and _graph.num_nodes() > 1) {
         delete_isolated_nodes(to_original_nodes, to_current_node);
-//#ifdef DEBUG_PRINT
+#ifdef DEBUG_PRINT
         std::cout << "Remaining vertices: " << _graph.num_nodes() << ", matching: " << final_matching.size() << " final and " << temporary_matching.size() << " temporary edges\n";
-//#endif
+#endif
         Matching current_matching(_graph.num_nodes());
         for (auto const& [end_a, end_b] : temporary_matching) {
             current_matching.add_to_matching(

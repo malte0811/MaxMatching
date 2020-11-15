@@ -243,8 +243,10 @@ std::pair<NodeId, NodeId> AlternatingTree::get_edge_to_parent(Representative nod
 
 void AlternatingTree::reset(NodeId root_node) {
     assert(not _shrinking.is_shrunken());
-    std::fill(_parent_node.begin(), _parent_node.end(), Parent{0, 0});
-    std::fill(_node_states.begin(), _node_states.end(), not_in_tree);
+    for (auto const& vertex : _tree_vertices) {
+        _parent_node.at(vertex) = Parent{0, 0};
+        _node_states.at(vertex) = not_in_tree;
+    }
     _node_states.at(root_node) = root;
     _tree_vertices.clear();
     _tree_vertices.push_back(root_node);

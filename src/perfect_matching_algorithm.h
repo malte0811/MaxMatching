@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <optional>
+#include <deque>
 #include "graph.h"
 #include "matching.h"
 #include "alternating_tree.h"
@@ -19,7 +20,7 @@ private:
 
     void add_incident_edges(NodeId node);
 
-    EdgeSet _open_edges;
+    std::deque<std::pair<NodeId, NodeId>> _open_edges;
     //TODO ref?
     Matching _current_matching;
     Graph const& _graph;

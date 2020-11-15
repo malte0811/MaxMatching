@@ -69,7 +69,6 @@ std::pair<std::optional<std::vector<NodeId>>, Matching> PerfectMatchingAlgorithm
 #endif
                 tree_for_root.augment_and_unshrink(repr_x, end_x, repr_y);
                 augmented = true;
-                //std::cout << "Augmented, now " << _current_matching.get_matching_edges().size() << " edges\n";
             }
         }
         if (not augmented) {
@@ -92,7 +91,7 @@ std::optional<NodeId> PerfectMatchingAlgorithm::find_uncovered_vertex() const {
 
 void PerfectMatchingAlgorithm::add_incident_edges(NodeId node) {
     for (auto const& graph_neighbor : _graph.node(node).neighbors()) {
-        _open_edges.push_back({node, graph_neighbor});
+        _open_edges.emplace_back(node, graph_neighbor);
     }
 }
 
