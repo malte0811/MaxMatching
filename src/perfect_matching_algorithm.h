@@ -4,6 +4,7 @@
 #include <vector>
 #include <optional>
 #include <deque>
+#include <variant>
 #include "graph.h"
 #include "matching.h"
 #include "alternating_tree.h"
@@ -17,11 +18,12 @@ public:
     [[nodiscard]] std::optional<std::vector<NodeId>> calc_matching_and_uncovered_root();
 
 private:
-    [[nodiscard]] std::optional<NodeId> find_uncovered_vertex(NodeId last) const;
+    [[nodiscard]] std::optional<NodeId> find_uncovered_vertex() const;
 
     void add_incident_edges(NodeId node);
 
-    std::vector<std::pair<NodeId, NodeId>> _open_edges;
+    std::optional<NodeId> _last_root;
+    std::vector<std::variant<EdgeSet, NodeId>> _open_edges;
     Matching& _current_matching;
     Graph const& _graph;
     std::vector<char> const& _allowed_vertices;

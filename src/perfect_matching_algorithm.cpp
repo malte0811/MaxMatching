@@ -22,10 +22,9 @@ EdgeSet PerfectMatchingAlgorithm::find_perfect_matching() {
 }
 
 std::optional<std::vector<NodeId>> PerfectMatchingAlgorithm::calc_matching_and_uncovered_root() {
-    std::optional<NodeId> next_root = 0;
-    while ((next_root = find_uncovered_vertex(*next_root))) {
+    while ((_last_root = find_uncovered_vertex())) {
 #ifdef DEBUG_PRINT
-        std::cout << "Starting iteration with root " << *next_root << " and matching:\n";
+        std::cout << "Starting iteration with root " << *_last_root << " and matching:\n";
         for (NodeId i = 0; i < _graph.num_nodes(); ++i) {
             if (_current_matching.is_matched(Representative(i))) {
                 auto const& other = _current_matching.other_end(Representative(i));
@@ -35,13 +34,33 @@ std::optional<std::vector<NodeId>> PerfectMatchingAlgorithm::calc_matching_and_u
             }
         }
 #endif
-        _tree_for_root.reset(*next_root);
+        _tree_for_root.reset(*_last_root);
         _open_edges.clear();
-        add_incident_edges(*next_root);
+        add_incident_edges(*_last_root);
         bool augmented = false;
         while (not augmented and not _open_edges.empty()) {
-            auto const& [end_x, end_y] = _open_edges.back();
-            _open_edges.pop_back();
+            auto& partial_node = _open_edges.back();
+            if (auto const* node_id = std::get_if<NodeId>(&partial_node)) {
+                EdgeSet edges;
+                auto const& node = _graph.node(*node_id);
+                edges.reserve(node.degree());
+                for (auto const& neighbor : node.neighbors()) {
+                    if (_allowed_vertices.at(neighbor)) {
+                        edges.emplace_back(*node_id, neighbor);
+                    }
+                }
+                partial_node = std::move(edges);
+            }
+            auto* neighbors = std::get_if<EdgeSet>(&partial_node);
+            if (neighbors->empty()) {
+                _open_edges.pop_back();
+                continue;
+            }
+            auto const[end_x, end_y] = neighbors->back();
+            neighbors->pop_back();
+            if (not _allowed_vertices.at(end_y)) {
+                continue;
+            }
             auto const& repr_x = _tree_for_root.get_representative(end_x);
             auto const& repr_y = _tree_for_root.get_representative(end_y);
             if (repr_x == repr_y) {
@@ -82,10 +101,11 @@ std::optional<std::vector<NodeId>> PerfectMatchingAlgorithm::calc_matching_and_u
     return std::nullopt;
 }
 
-std::optional<NodeId> PerfectMatchingAlgorithm::find_uncovered_vertex(NodeId last) const {
+std::optional<NodeId> PerfectMatchingAlgorithm::find_uncovered_vertex() const {
+    auto const& first_guess = _last_root ? *_last_root + 1 : 0;
     for (auto const& [start, end] : {
-            std::make_pair(last + 1, _graph.num_nodes()),
-            std::make_pair(0U, last + 1),
+            std::make_pair(first_guess, _graph.num_nodes()),
+            std::make_pair(0U, first_guess),
     }) {
         for (NodeId i = start; i < end; ++i) {
             if (_allowed_vertices.at(i) and not _current_matching.is_matched(Representative(i))) {
@@ -97,10 +117,6 @@ std::optional<NodeId> PerfectMatchingAlgorithm::find_uncovered_vertex(NodeId las
 }
 
 void PerfectMatchingAlgorithm::add_incident_edges(NodeId node) {
-    for (auto const& graph_neighbor : _graph.node(node).neighbors()) {
-        if (_allowed_vertices[graph_neighbor]) {
-            _open_edges.emplace_back(node, graph_neighbor);
-        }
-    }
+    _open_edges.emplace_back(node);
 }
 
