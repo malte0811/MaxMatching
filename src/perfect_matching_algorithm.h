@@ -10,20 +10,22 @@
 
 class PerfectMatchingAlgorithm {
 public:
-    explicit PerfectMatchingAlgorithm(Matching&& matching, Graph const& graph);
+    explicit PerfectMatchingAlgorithm(Matching& matching, Graph const& graph, std::vector<char> const& allowed_vertices);
 
     [[nodiscard]] EdgeSet find_perfect_matching();
 
-    [[nodiscard]] std::pair<std::optional<std::vector<NodeId>>, Matching> calc_matching_and_uncovered_root();
+    [[nodiscard]] std::optional<std::vector<NodeId>> calc_matching_and_uncovered_root();
+
 private:
-    [[nodiscard]] std::optional<NodeId> find_uncovered_vertex() const;
+    [[nodiscard]] std::optional<NodeId> find_uncovered_vertex(NodeId last) const;
 
     void add_incident_edges(NodeId node);
 
-    std::deque<std::pair<NodeId, NodeId>> _open_edges;
-    //TODO ref?
-    Matching _current_matching;
+    std::vector<std::pair<NodeId, NodeId>> _open_edges;
+    Matching& _current_matching;
     Graph const& _graph;
+    std::vector<char> const& _allowed_vertices;
+    AlternatingTree _tree_for_root;
 };
 
 
