@@ -24,6 +24,7 @@ EdgeSet MaximumMatchingAlgorithm::calc_maximum_matching() {
 #endif
         auto const& tree_vertices = perfect_alg.calc_matching_and_uncovered_root();
         if (tree_vertices) {
+            std::vector<NodeId> isolated_to_remove;
             for (auto const& to_remove : *tree_vertices) {
                 assert(_allowed.at(to_remove));
                 _allowed.at(to_remove) = false;
@@ -32,12 +33,15 @@ EdgeSet MaximumMatchingAlgorithm::calc_maximum_matching() {
                     auto& degree = _degrees.at(neighbor);
                     --degree;
                     if (degree == 0) {
-                        auto& allowed = _allowed.at(neighbor);
-                        if (allowed) {
-                            ++_num_blocked_nodes;
-                            allowed = false;
-                        }
+                        isolated_to_remove.push_back(neighbor);
                     }
+                }
+            }
+            for (auto const& isolated : isolated_to_remove) {
+                auto& allowed = _allowed.at(isolated);
+                if (allowed) {
+                    allowed = false;
+                    ++_num_blocked_nodes;
                 }
             }
         } else {
