@@ -14,15 +14,12 @@ _degrees(_graph.num_nodes()){
     }
 }
 
-EdgeSet MaximumMatchingAlgorithm::calc_maximum_matching() {
+EdgeList MaximumMatchingAlgorithm::calc_maximum_matching() {
     bool is_maximum = false;
     delete_isolated_nodes();
     PerfectMatchingAlgorithm perfect_alg(_current_matching, _graph, _allowed);
     while (not is_maximum and _graph.num_nodes() > _num_blocked_nodes + 1) {
-#ifdef DEBUG_PRINT
-        std::cout << "Remaining vertices: " << (_graph.num_nodes() - _num_blocked_nodes) << '\n';
-#endif
-        auto const& tree_vertices = perfect_alg.calc_matching_and_uncovered_root();
+        auto const& tree_vertices = perfect_alg.calculate_matching_or_frustrated_tree();
         if (tree_vertices) {
             std::vector<NodeId> isolated_to_remove;
             for (auto const& to_remove : *tree_vertices) {

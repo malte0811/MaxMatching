@@ -9,7 +9,7 @@ class MaximumMatchingAlgorithm {
 public:
     explicit MaximumMatchingAlgorithm(Graph&& graph);
 
-    EdgeSet calc_maximum_matching();
+    EdgeList calc_maximum_matching();
 private:
     void delete_isolated_nodes();
 

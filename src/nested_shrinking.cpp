@@ -5,13 +5,14 @@
 
 NestedShrinking::NestedShrinking(size_t num_nodes) : _partition(num_nodes), _set_elements(num_nodes) {
     for (NodeId i = 0; i < num_nodes; ++i) {
-        _partition.at(i) = Representative(i);
-        _set_elements.at(i) = {i};
+        Representative repr(i);
+        _partition.at(i) = repr;
+        _set_elements.at(repr) = {i};
     }
     validate();
 }
 
-Representative NestedShrinking::shrink(VertexSet const& to_shrink) {
+Representative NestedShrinking::shrink(RepresentativeSet const& to_shrink) {
     assert(to_shrink.size() > 1);
     Representative result_representative = to_shrink.at(0);
     size_t total_size = 0;
@@ -24,7 +25,7 @@ Representative NestedShrinking::shrink(VertexSet const& to_shrink) {
             largest_set_size = size;
         }
     }
-    auto& result_set = get_elements(result_representative);
+    auto& result_set = _set_elements.at(result_representative);
     result_set.reserve(total_size);
     auto result_copy = result_set;
     ShrinkStep shrink_info;
@@ -32,7 +33,7 @@ Representative NestedShrinking::shrink(VertexSet const& to_shrink) {
     shrink_info.new_name = result_representative;
     for (auto const& set_repr : to_shrink) {
         if (set_repr != result_representative) {
-            auto& old_elements = get_elements(set_repr);
+            auto& old_elements = _set_elements.at(set_repr);
             result_set.insert(result_set.end(), old_elements.begin(), old_elements.end());
             for (auto const& element : old_elements) {
                 _partition.at(element) = result_representative;
@@ -56,10 +57,10 @@ bool NestedShrinking::is_shrunken() const {
     return not _shrink_stack.empty();
 }
 
-std::pair<VertexSet, Representative> NestedShrinking::expand() {
+std::pair<RepresentativeSet, Representative> NestedShrinking::expand() {
     auto shrink_to_undo = std::move(_shrink_stack.back());
     _shrink_stack.pop_back();
-    VertexSet shrunken_vertices;
+    RepresentativeSet shrunken_vertices;
     shrunken_vertices.reserve(shrink_to_undo.elements.size() + 1);
     for (auto&& replacement : shrink_to_undo.elements) {
         if (replacement.old_name != shrink_to_undo.new_name) {
@@ -67,7 +68,7 @@ std::pair<VertexSet, Representative> NestedShrinking::expand() {
                 _partition.at(replaced_node) = replacement.old_name;
             }
         }
-        get_elements(replacement.old_name) = std::move(replacement.affected_nodes);
+        _set_elements.at(replacement.old_name) = std::move(replacement.affected_nodes);
         shrunken_vertices.push_back(replacement.old_name);
     }
     validate();
@@ -79,11 +80,7 @@ size_t NestedShrinking::get_size(Representative const& set) const {
 }
 
 std::vector<NodeId> const& NestedShrinking::get_elements(Representative const& set) const {
-    return _set_elements.at(set.id());
-}
-
-std::vector<NodeId>& NestedShrinking::get_elements(Representative const& set) {
-    return _set_elements.at(set.id());
+    return _set_elements.at(set);
 }
 
 void NestedShrinking::validate() const {

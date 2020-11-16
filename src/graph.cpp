@@ -39,18 +39,6 @@ void Node::add_neighbor(NodeId const id) {
     _neighbors.push_back(id);
 }
 
-void Node::remap_neighbors(std::vector<std::optional<NodeId>> const& mapper) {
-    size_t new_num_neighbors = 0;
-    for (auto const& neighbor : _neighbors) {
-        auto const& mapped = mapper.at(neighbor);
-        if (mapped) {
-            _neighbors.at(new_num_neighbors) = *mapped;
-            ++new_num_neighbors;
-        }
-    }
-    _neighbors.resize(new_num_neighbors);
-}
-
 /////////////////////////////////////////////
 //! \c Graph definitions
 /////////////////////////////////////////////
@@ -102,29 +90,6 @@ Graph Graph::read_dimacs(std::istream& input) {
     }
 
     return graph;
-}
-
-std::vector<NodeId> Graph::delete_nodes(std::vector<bool> const& should_remove) {
-    NodeId new_num_nodes = 0;
-    std::vector<NodeId> id_mapper;
-    std::vector<std::optional<NodeId>> inverse_id_mapper(num_nodes());
-    for (NodeId i = 0; i < num_nodes(); ++i) {
-        assert(new_num_nodes <= i);
-        if (not should_remove.at(i)) {
-            if (i != new_num_nodes) {
-                _nodes.at(new_num_nodes) = std::move(_nodes.at(i));
-            }
-            inverse_id_mapper.at(i) = new_num_nodes;
-            id_mapper.push_back(i);
-            ++new_num_nodes;
-            assert(id_mapper.size() == new_num_nodes);
-        }
-    }
-    for (NodeId i = 0; i < new_num_nodes; ++i) {
-        _nodes.at(i).remap_neighbors(inverse_id_mapper);
-    }
-    _nodes.resize(new_num_nodes);
-    return id_mapper;
 }
 
 Graph Graph::shuffle_with_seed(unsigned long seed) const {

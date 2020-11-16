@@ -16,7 +16,8 @@
 
 using size_type = uint32_t;
 using NodeId = size_type;
-using EdgeSet = std::vector<std::pair<NodeId, NodeId>>;
+using Edge = std::pair<NodeId, NodeId>;
+using EdgeList = std::vector<Edge>;
 
 /**
    @class Node
@@ -47,8 +48,6 @@ private:
       @warning Does not check whether @c id is the identity of the node itself (which would create a loop!).
    **/
    void add_neighbor(NodeId id);
-
-   void remap_neighbors(std::vector<std::optional<NodeId>> const& mapper);
 
    std::vector<NodeId> _neighbors;
 }; // class Node
@@ -95,17 +94,9 @@ public:
    **/
    void add_edge(NodeId node1_id, NodeId node2_id);
 
-   /**
-    * Removes a set of nodes (and all incident edges) from the graph
-    * @param should_remove vector of length num_nodes(). true indicates that the node should be removed.
-    * @return A vector mapping the new node index of each remaining node to the old index, i.e.
-    * result[new_node_id] == old_node_id
-    */
-   std::vector<NodeId> delete_nodes(std::vector<bool> const& should_remove);
+   [[nodiscard]] Graph shuffle_with_seed(unsigned long seed) const;
 
-   Graph shuffle_with_seed(unsigned long seed) const;
-
-   Graph with_extra_all_edge_vertices(NodeId extra_vertices) const;
+   [[nodiscard]] Graph with_extra_all_edge_vertices(NodeId extra_vertices) const;
 
    /**
     * Reads a graph in DIMACS format from the given istream and returns that graph.

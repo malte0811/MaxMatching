@@ -13,17 +13,21 @@ class PerfectMatchingAlgorithm {
 public:
     explicit PerfectMatchingAlgorithm(Matching& matching, Graph const& graph, std::vector<char> const& allowed_vertices);
 
-    [[nodiscard]] EdgeSet find_perfect_matching();
+    [[nodiscard]] EdgeList find_perfect_matching();
 
-    [[nodiscard]] std::optional<std::vector<NodeId>> calc_matching_and_uncovered_root();
+    [[nodiscard]] std::optional<std::vector<NodeId>> calculate_matching_or_frustrated_tree();
 
 private:
     [[nodiscard]] std::optional<NodeId> find_uncovered_vertex() const;
 
-    void add_incident_edges(NodeId node);
+    [[nodiscard]] std::optional<Edge> get_next_edge();
 
     std::optional<NodeId> _last_root;
-    std::vector<std::variant<EdgeSet, NodeId>> _open_edges;
+    /**
+     * Getting all neighbors of a vertex is relatively expensive, but DFS seems to be the best search order. So store
+     * the node ID and only expand it to a list of nodes when we actually need it.
+     */
+    std::vector<std::variant<EdgeList, NodeId>> _edges_to_check;
     Matching& _current_matching;
     Graph const& _graph;
     std::vector<char> const& _allowed_vertices;
