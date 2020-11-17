@@ -27,7 +27,6 @@ Representative NestedShrinking::shrink(RepresentativeSet const& to_shrink) {
     }
     auto& result_set = _set_elements.at(result_representative);
     result_set.reserve(total_size);
-    auto result_copy = result_set;
     ShrinkStep shrink_info;
     shrink_info.elements.reserve(to_shrink.size());
     shrink_info.new_name = result_representative;
@@ -41,7 +40,7 @@ Representative NestedShrinking::shrink(RepresentativeSet const& to_shrink) {
             shrink_info.elements.push_back({set_repr, std::move(old_elements)});
             old_elements.clear();
         } else {
-            shrink_info.elements.push_back({set_repr, std::move(result_copy)});
+            shrink_info.elements.push_back({set_repr, {}});
         }
     }
     _shrink_stack.push_back(std::move(shrink_info));
@@ -61,16 +60,21 @@ std::pair<RepresentativeSet, Representative> NestedShrinking::expand() {
     auto shrink_to_undo = std::move(_shrink_stack.back());
     _shrink_stack.pop_back();
     RepresentativeSet shrunken_vertices;
-    shrunken_vertices.reserve(shrink_to_undo.elements.size() + 1);
+    shrunken_vertices.reserve(shrink_to_undo.elements.size());
+    size_t non_main_sizes_sum = 0;
     for (auto&& replacement : shrink_to_undo.elements) {
-        if (replacement.old_name != shrink_to_undo.new_name) {
+        if(replacement.old_name != shrink_to_undo.new_name) {
             for (auto const& replaced_node : replacement.affected_nodes) {
                 _partition.at(replaced_node) = replacement.old_name;
             }
+            non_main_sizes_sum += replacement.affected_nodes.size();
+            _set_elements.at(replacement.old_name) = std::move(replacement.affected_nodes);
         }
-        _set_elements.at(replacement.old_name) = std::move(replacement.affected_nodes);
         shrunken_vertices.push_back(replacement.old_name);
     }
+    auto& total_set = _set_elements.at(shrink_to_undo.new_name);
+    // New elements are added at the end of the set, so we can just resize to get the correct set back
+    total_set.resize(total_set.size() - non_main_sizes_sum);
     validate();
     return {shrunken_vertices, shrink_to_undo.new_name};
 }

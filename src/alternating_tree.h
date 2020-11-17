@@ -85,6 +85,9 @@ private:
     /// Indicates whether this tree is still in a valid state or needs to be reset before any further operations
     /// (this is the case after unshrinking)
     bool _needs_reset = true;
+    // Only used in find_fundamental_circuit, but allocating this every time is very expensive
+    RepresentativeVector<size_t> mutable _a_path_index;
+    RepresentativeVector<size_t> mutable _b_path_index;
 };
 
 #endif //MAXMATCHING_ALTERNATING_TREE_H

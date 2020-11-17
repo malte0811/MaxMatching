@@ -138,7 +138,9 @@ AlternatingTree::AlternatingTree(Matching& matching, NodeId root_node)
         : _current_matching(matching),
           _shrinking(_current_matching.total_num_nodes()),
           _parent_node(_current_matching.total_num_nodes()),
-          _node_states(_current_matching.total_num_nodes()) {
+          _node_states(_current_matching.total_num_nodes()),
+          _a_path_index(_parent_node.size(), invalid_id),
+          _b_path_index(_parent_node.size(), invalid_id) {
     reset(root_node);
 }
 
@@ -177,31 +179,38 @@ AlternatingTree::FundamentalCircuit AlternatingTree::find_fundamental_circuit(
         Representative repr_a, Representative repr_b, NodeId node_a, NodeId node_b
 ) const {
     //TODO speed up by using depth data?
-    std::vector<size_t> a_path_index(_parent_node.size(), invalid_id);
-    std::vector<size_t> b_path_index(_parent_node.size(), invalid_id);
     std::vector<FundamentalCircuit::NodeInfo> a_path{{repr_a, node_a, invalid_node}};
     std::vector<FundamentalCircuit::NodeInfo> b_path{{repr_b, node_b, invalid_node}};
-    a_path_index.at(repr_a.id()) = b_path_index.at(repr_b.id()) = 0;
+    _a_path_index.at(repr_a) = _b_path_index.at(repr_b) = 0;
     while (true) {
         for (auto&[path, indices, other_path, other_indices] : {
-                std::tie(a_path, a_path_index, b_path, b_path_index),
-                std::tie(b_path, b_path_index, a_path, a_path_index)
+                std::tie(a_path, _a_path_index, b_path, _b_path_index),
+                std::tie(b_path, _b_path_index, a_path, _a_path_index)
         }) {
             auto& last = path.back();
             if (not is_root(last.repr)) {
                 auto const& next = get_parent_repr(last.repr);
                 auto const&[vertex_here, vertex_next] = get_edge_to_parent(last.repr);
                 last.above = vertex_here;
-                if (other_indices.at(next.id()) != invalid_id) {
+                if (other_indices.at(next) != invalid_id) {
                     FundamentalCircuit result;
                     result.other_vertex_used_at_top = vertex_next;
-                    other_path.resize(other_indices.at(next.id()) + 1);
+                    auto const& other_length = other_indices.at(next) + 1;
+                    for (auto&[reset_path, reset_indices] : {
+                            std::tie(path, indices),
+                            std::tie(other_path, other_indices)
+                    }) {
+                        for (auto const& id : reset_path) {
+                            reset_indices.at(id.repr) = invalid_id;
+                        }
+                    }
+                    other_path.resize(other_length);
                     other_path.back().above = invalid_node;
                     result.path_containing_top_node = std::move(other_path);
                     result.path_without_top_node = std::move(path);
                     return result;
                 } else {
-                    indices.at(next.id()) = path.size();
+                    indices.at(next) = path.size();
                     path.push_back({next, vertex_next, invalid_node});
                 }
             }
