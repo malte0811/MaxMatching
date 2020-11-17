@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 project(MaxMatching)
 enable_testing()
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Werror -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Werror -fno-omit-frame-pointer -DDEBUG_OUTPUT")
 
 set(CMAKE_CXX_STANDARD 17)
 

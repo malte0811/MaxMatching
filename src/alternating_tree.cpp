@@ -43,6 +43,7 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
     assert(is_even(top_node));
     auto const top_state = get_state(top_node);
     auto const& top_parent = _parent_node.at(top_node);
+    auto const& top_depth = _depth.at(top_node);
     auto const& shrunken_node = _shrinking.shrink(cycle_vertices);
 #ifndef NDEBUG
     for (auto const&[end_a, end_b] : cycle_edges) {
@@ -52,7 +53,9 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
 #endif
     _current_matching.shrink(cycle_vertices, std::move(cycle_edges), shrunken_node);
     _parent_node.at(shrunken_node) = top_parent;
+    _depth.at(shrunken_node) = top_depth;
     // Set the correct node states
+#ifndef NDEBUG
     for (Representative node : cycle_vertices) {
         if (node != shrunken_node) {
             assert(top_state == root or get_state(node) != root);
@@ -61,6 +64,9 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
             set_state(node, top_state);
         }
     }
+#else
+    set_state(shrunken_node, top_state);
+#endif
     return odd_nodes;
 }
 
@@ -122,6 +128,7 @@ void AlternatingTree::set_parent(Representative node, Representative parent_rep,
     assert(is_tree_node(parent_rep));
     assert(not is_tree_node(node));
     _parent_node.at(node) = {link, parent};
+    _depth.at(node) = _depth.at(parent_rep) + 1;
     _tree_vertices.push_back(node.id());
     if (is_even(parent_rep)) {
         set_state(node, odd);
@@ -138,9 +145,8 @@ AlternatingTree::AlternatingTree(Matching& matching, NodeId root_node)
         : _current_matching(matching),
           _shrinking(_current_matching.total_num_nodes()),
           _parent_node(_current_matching.total_num_nodes()),
-          _node_states(_current_matching.total_num_nodes()),
-          _a_path_index(_parent_node.size(), invalid_id),
-          _b_path_index(_parent_node.size(), invalid_id) {
+          _depth(_current_matching.total_num_nodes()),
+          _node_states(_current_matching.total_num_nodes()) {
     reset(root_node);
 }
 
@@ -155,6 +161,7 @@ bool AlternatingTree::is_tree_node(Representative node) const {
 
 std::pair<NodeId, NodeId> AlternatingTree::get_edge_to_parent(Representative node) const {
     assert(not _needs_reset);
+    assert(is_tree_node(node));
     auto const& parent = _parent_node.at(node);
     return {parent.edge_end_here, parent.edge_end_parent};
 }
@@ -162,10 +169,10 @@ std::pair<NodeId, NodeId> AlternatingTree::get_edge_to_parent(Representative nod
 void AlternatingTree::reset(NodeId root_node) {
     assert(not _shrinking.is_shrunken());
     for (auto const& vertex : _tree_vertices) {
-        _parent_node.at(Representative(vertex)) = Parent{0, 0};
         _node_states.at(vertex) = not_in_tree;
     }
     _node_states.at(root_node) = root;
+    _depth.at(Representative(root_node)) = 0;
     _tree_vertices.clear();
     _tree_vertices.push_back(root_node);
     _needs_reset = false;
@@ -178,44 +185,33 @@ std::vector<NodeId> AlternatingTree::get_tree_vertices() const {
 AlternatingTree::FundamentalCircuit AlternatingTree::find_fundamental_circuit(
         Representative repr_a, Representative repr_b, NodeId node_a, NodeId node_b
 ) const {
-    //TODO speed up by using depth data?
-    std::vector<FundamentalCircuit::NodeInfo> a_path{{repr_a, node_a, invalid_node}};
-    std::vector<FundamentalCircuit::NodeInfo> b_path{{repr_b, node_b, invalid_node}};
-    _a_path_index.at(repr_a) = _b_path_index.at(repr_b) = 0;
-    while (true) {
-        for (auto&[path, indices, other_path, other_indices] : {
-                std::tie(a_path, _a_path_index, b_path, _b_path_index),
-                std::tie(b_path, _b_path_index, a_path, _a_path_index)
-        }) {
-            auto& last = path.back();
-            if (not is_root(last.repr)) {
-                auto const& next = get_parent_repr(last.repr);
-                auto const&[vertex_here, vertex_next] = get_edge_to_parent(last.repr);
-                last.above = vertex_here;
-                if (other_indices.at(next) != invalid_id) {
-                    FundamentalCircuit result;
-                    result.other_vertex_used_at_top = vertex_next;
-                    auto const& other_length = other_indices.at(next) + 1;
-                    for (auto&[reset_path, reset_indices] : {
-                            std::tie(path, indices),
-                            std::tie(other_path, other_indices)
-                    }) {
-                        for (auto const& id : reset_path) {
-                            reset_indices.at(id.repr) = invalid_id;
-                        }
-                    }
-                    other_path.resize(other_length);
-                    other_path.back().above = invalid_node;
-                    result.path_containing_top_node = std::move(other_path);
-                    result.path_without_top_node = std::move(path);
-                    return result;
-                } else {
-                    indices.at(next) = path.size();
-                    path.push_back({next, vertex_next, invalid_node});
-                }
-            }
-        }
+    using Path = std::vector<FundamentalCircuit::NodeInfo>;
+    Path a_path{{repr_a, node_a, invalid_node}};
+    Path b_path{{repr_b, node_b, invalid_node}};
+    auto a_depth = get_depth(repr_a);
+    auto b_depth = get_depth(repr_b);
+    a_path.reserve(a_depth);
+    b_path.reserve(b_depth);
+    while (a_path.back().repr != b_path.back().repr) {
+        auto& path = a_depth < b_depth ? b_path : a_path;
+        auto& depth = a_depth < b_depth ? b_depth : a_depth;
+        auto& last = path.back();
+        auto const& next = get_parent_repr(last.repr);
+        depth = get_depth(next);
+        auto const&[vertex_here, vertex_next] = get_edge_to_parent(last.repr);
+        last.above = vertex_here;
+        path.push_back({next, vertex_next, invalid_node});
     }
+    FundamentalCircuit result;
+    result.path_containing_top_node = std::move(a_path);
+    result.other_vertex_used_at_top = b_path.back().below;
+    b_path.pop_back();
+    result.path_without_top_node = std::move(b_path);
+    return result;
+}
+
+NodeId AlternatingTree::get_depth(Representative node) const {
+    return _depth.at(node);
 }
 
 std::pair<EdgeList, RepresentativeSet> AlternatingTree::FundamentalCircuit::to_edges_and_reprs() const {

@@ -56,16 +56,19 @@ void Matching::augment_along(std::vector<Representative> const& path, std::vecto
 }
 
 void Matching::shrink(RepresentativeSet const& circuit_to_shrink, EdgeList&& circuit_edges, Representative new_name) {
-    // TODO this is a bit awkward
-    // Potential replacement: check if equal to circuit.at(+-1)
-    std::vector<char> in_circuit(_matched_vertices.size(), 0);
-    for (auto const& vertex : circuit_to_shrink) {
-        in_circuit.at(vertex.id()) = 1;
-    }
     std::optional<std::pair<Representative, Representative>> edge_to_outside;
-    for (auto const& vertex : circuit_to_shrink) {
+    for (size_t i = 0; i < circuit_to_shrink.size(); ++i) {
+        auto const& vertex = circuit_to_shrink.at(i);
         auto const& matched_to = _matched_vertices.at(vertex);
-        if (not in_circuit.at(matched_to.id())) {
+        bool matched_to_node_in_circuit = false;
+        for (auto const& offset : {-1, 1}) {
+            auto const& index = (i + circuit_to_shrink.size() + offset) % circuit_to_shrink.size();
+            if (matched_to == circuit_to_shrink.at(index)) {
+                matched_to_node_in_circuit = true;
+                break;
+            }
+        }
+        if (not matched_to_node_in_circuit) {
             assert(not edge_to_outside);
             edge_to_outside = {vertex, matched_to};
         } else {
@@ -142,10 +145,10 @@ void Matching::validate([[maybe_unused]]NestedShrinking const* shrinking) const{
         if (is_matched(repr)) {
             auto const& other = _matched_vertices.at(repr);
             assert(_matched_vertices.at(other) == repr);
-        }
-        if (shrinking) {
-            auto const& self_repr = shrinking->get_representative(i);
-            assert(self_repr == shrinking->get_representative(_real_vertex_used_for.at(self_repr)));
+            if (shrinking) {
+                auto const& self_repr = shrinking->get_representative(i);
+                assert(self_repr == shrinking->get_representative(_real_vertex_used_for.at(self_repr)));
+            }
         }
     }
 #endif

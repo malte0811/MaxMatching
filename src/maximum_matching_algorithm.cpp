@@ -78,6 +78,7 @@ void MaximumMatchingAlgorithm::match_leaves() {
             continue;
         }
         _allowed.at(i) = false;
+        ++_num_blocked_nodes;
         auto const& neighbor = node.neighbors().front();
         if (_current_matching.is_matched(Representative(neighbor))) {
             continue;
@@ -85,6 +86,6 @@ void MaximumMatchingAlgorithm::match_leaves() {
         assert(not _current_matching.is_matched(Representative(i)));
         _current_matching.add_edge(i, neighbor);
         _allowed.at(neighbor) = false;
-        _num_blocked_nodes += 2;
+        ++_num_blocked_nodes;
     }
 }
