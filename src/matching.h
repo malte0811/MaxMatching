@@ -16,6 +16,8 @@ public:
 
     [[nodiscard]] bool contains_edge(Representative end_a, Representative end_b) const;
 
+    void add_edge(NodeId end_a, NodeId end_b);
+
     void augment_along(std::vector<Representative> const& path, std::vector<std::pair<NodeId, NodeId>> const& edges);
 
     /**

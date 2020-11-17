@@ -16,6 +16,7 @@ _degrees(_graph.num_nodes()){
 
 EdgeList MaximumMatchingAlgorithm::calc_maximum_matching() {
     bool is_maximum = false;
+    match_leaves();
     delete_isolated_nodes();
     PerfectMatchingAlgorithm perfect_alg(_current_matching, _graph, _allowed);
     while (not is_maximum and _graph.num_nodes() > _num_blocked_nodes + 1) {
@@ -63,5 +64,27 @@ void MaximumMatchingAlgorithm::delete_isolated_nodes() {
                 ++_num_blocked_nodes;
             }
         }
+    }
+}
+
+void MaximumMatchingAlgorithm::match_leaves() {
+    // Match each node with leaf neighbors to one of those. This can significantly decrease
+    // the number of nodes that need to be considered by the main algorithm without 
+    // destroying optimality: If a node with leaf neighbors is matched to some other 
+    // neighbor in a maximum matching we can always replace that edge with one to a leaf
+    for (NodeId i = 0; i < _graph.num_nodes(); ++i) {
+        auto const& node = _graph.node(i);
+        if (node.degree() != 1) {
+            continue;
+        }
+        _allowed.at(i) = false;
+        auto const& neighbor = node.neighbors().front();
+        if (_current_matching.is_matched(Representative(neighbor))) {
+            continue;
+        }
+        assert(not _current_matching.is_matched(Representative(i)));
+        _current_matching.add_edge(i, neighbor);
+        _allowed.at(neighbor) = false;
+        _num_blocked_nodes += 2;
     }
 }

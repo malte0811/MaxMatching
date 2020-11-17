@@ -19,6 +19,18 @@ bool Matching::contains_edge(Representative const end_a, Representative const en
     return _matched_vertices.at(end_a) == end_b;
 }
 
+void Matching::add_edge(NodeId end_a, NodeId end_b) {
+    Representative repr_a(end_a);
+    Representative repr_b(end_b);
+    assert(not is_matched(repr_a));
+    assert(not is_matched(repr_b));
+    _matched_vertices.at(repr_a) = repr_b;
+    _matched_vertices.at(repr_b) = repr_a;
+    _real_vertex_used_for.at(repr_a) = end_a;
+    _real_vertex_used_for.at(repr_b) = end_b;
+    validate();
+}
+
 void Matching::augment_along(std::vector<Representative> const& path, std::vector<std::pair<NodeId, NodeId>> const& edges) {
     assert(not is_matched(path.front()));
     assert(not is_matched(path.back()));

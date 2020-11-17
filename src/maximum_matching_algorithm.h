@@ -13,6 +13,8 @@ public:
 private:
     void delete_isolated_nodes();
 
+    void match_leaves();
+
     Graph _graph;
     Matching _current_matching;
     std::vector<char> _allowed;
