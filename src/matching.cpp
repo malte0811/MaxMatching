@@ -20,6 +20,7 @@ bool Matching::contains_edge(Representative const end_a, Representative const en
 }
 
 void Matching::add_edge(NodeId end_a, NodeId end_b) {
+    assert(_shrink_data.empty());
     Representative repr_a(end_a);
     Representative repr_b(end_b);
     assert(not is_matched(repr_a));
@@ -38,6 +39,7 @@ void Matching::augment_along(
     assert(not is_matched(path.back()));
     assert(path.size() % 2 == 0);
     assert(edges.size() == path.size() - 1);
+    //+: Edge added by the augmentation, -: Edges removed by the augmentation
     //0+++1---2+++3---4+++5 (path)
     //x+0+x-1-x+2+x-3-x+4+x (edges)
     for (size_t i = 0; i < path.size(); i += 2) {
@@ -57,14 +59,16 @@ void Matching::augment_along(
     validate();
 }
 
-void Matching::shrink(RepresentativeSet const& circuit_to_shrink, EdgeList&& circuit_edges, Representative new_name) {
+void Matching::shrink(Representatives const& circuit_to_shrink, EdgeList&& circuit_edges, Representative new_name) {
     std::optional<std::pair<Representative, Representative>> edge_to_outside;
     for (size_t i = 0; i < circuit_to_shrink.size(); ++i) {
         auto const& vertex = circuit_to_shrink.at(i);
-        auto const& matched_to = _matched_vertices.at(vertex);
-        // The node can only be matched to one of two vertices in the circuit: The one right after or right before it
+        // Do not use other_end, it contains assertions that are not always fulfilled half-way through shrinking
+        auto const matched_to = _matched_vertices.at(vertex);
+        // The node can only be matched to one of three vertices in the circuit: The one right after it, right before it,
+        // and to itself (if it isn't actually matched
         bool matched_to_node_in_circuit = false;
-        for (auto const& offset : {-1, 1}) {
+        for (auto const& offset : {-1, 0, 1}) {
             auto const& index = (i + circuit_to_shrink.size() + offset) % circuit_to_shrink.size();
             if (matched_to == circuit_to_shrink.at(index)) {
                 matched_to_node_in_circuit = true;
@@ -80,6 +84,8 @@ void Matching::shrink(RepresentativeSet const& circuit_to_shrink, EdgeList&& cir
     }
     if (edge_to_outside.has_value()) {
         auto const&[old_attached_to, outside_vertex] = *edge_to_outside;
+        // If one node in the circuit had a matching edge to a node outside the circuit, add that edge to the shrunken
+        // vertex unless the shrunken vertex is the vertex that already has that edge
         if (old_attached_to != new_name) {
             match_unchecked(outside_vertex, new_name);
             _real_vertex_used_for.at(new_name) = _real_vertex_used_for.at(old_attached_to);
@@ -91,14 +97,13 @@ void Matching::shrink(RepresentativeSet const& circuit_to_shrink, EdgeList&& cir
 }
 
 void Matching::expand(
-        Representative current_name,
-        RepresentativeSet const& expanded_circuit,
-        NestedShrinking const& shrinking
+        Representative current_name, Representatives const& expanded_circuit, NestedShrinking const& shrinking
 ) {
-    size_t offset = 0;
-    auto const circuit_edges = _shrink_data.back();
+    auto const circuit_edges = std::move(_shrink_data.back());
     _shrink_data.pop_back();
+    size_t externally_matched_node = 0;
     if (is_matched(current_name)) {
+        // If the shrunken vertex is matched, find the unshrunken vertex containing the real vertex used for that edge
         auto const& matched_to = other_end(current_name);
         auto const& covered_vertex = shrinking.get_representative(_real_vertex_used_for.at(current_name));
         _real_vertex_used_for.at(covered_vertex) = _real_vertex_used_for.at(current_name);
@@ -106,16 +111,17 @@ void Matching::expand(
         bool found_offset = false;
         for (size_t i = 0; not found_offset and i < expanded_circuit.size(); ++i) {
             if (covered_vertex == expanded_circuit.at(i)) {
-                offset = i;
+                externally_matched_node = i;
                 found_offset = true;
             }
         }
         assert(found_offset);
     }
     assert(expanded_circuit.size() % 2 == 1);
+    // Add a perfect matching on all nodes except for the one (potentially) covered by an external edge
     for (size_t i = 1; i < expanded_circuit.size(); i += 2) {
-        auto const& base_id = (i + offset) % expanded_circuit.size();
-        auto const& next_id = (i + offset + 1) % expanded_circuit.size();
+        auto const& base_id = (i + externally_matched_node) % expanded_circuit.size();
+        auto const& next_id = (i + externally_matched_node + 1) % expanded_circuit.size();
         auto const& vertex_a = expanded_circuit.at(base_id);
         auto const& vertex_b = expanded_circuit.at(next_id);
         match_unchecked(vertex_a, vertex_b);

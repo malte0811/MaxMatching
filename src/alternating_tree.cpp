@@ -5,34 +5,35 @@
 #include <tuple>
 #include "alternating_tree.h"
 
-void AlternatingTree::extend(Representative tree_repr, Representative matched_repr, NodeId tree_node) {
+void AlternatingTree::extend(Representative tree_repr, NodeId tree_node, NodeId matched_node) {
     assert(not _needs_reset);
     assert(is_even(tree_repr));
+    Representative matched_repr(matched_node);
     assert(not is_tree_node(matched_repr));
     assert(get_representative(tree_repr.id()) == tree_repr);
     assert(get_representative(tree_node) == tree_repr);
-    assert(get_representative(matched_repr.id()) == matched_repr);
-    // Nodes outside the tree are never pseudonodes, so matched_repr.id() == end node of the edge
-    set_parent(matched_repr, tree_repr, tree_node, matched_repr.id());
+    assert(get_representative(matched_node).id() == matched_node);
+    set_parent(matched_node, tree_repr, tree_node);
     auto const& matched_end = _current_matching.other_end(matched_repr);
     assert(get_representative(matched_end.id()) == matched_end);
     assert(not is_tree_node(matched_end));
-    set_parent(matched_end, matched_repr, matched_repr.id(), matched_end.id());
+    set_parent(matched_end.id(), matched_repr, matched_node);
 }
 
-std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(
-        Representative repr_a, Representative repr_b, NodeId node_a, NodeId node_b
-) {
+std::vector<NodeId>
+AlternatingTree::shrink_fundamental_circuit(Representative repr_a, NodeId node_a, Representative repr_b,
+                                            NodeId node_b) {
     assert(not _needs_reset);
     assert(get_representative(repr_a.id()) == repr_a);
     assert(get_representative(repr_b.id()) == repr_b);
     assert(is_even(repr_a));
     assert(is_even(repr_b));
     auto const& fundamental_cycle = find_fundamental_circuit(repr_a, repr_b, node_a, node_b);
-    auto const top_node = fundamental_cycle.path_containing_top_node.back().repr;
-    auto[cycle_edges, cycle_vertices] = fundamental_cycle.to_edges_and_reprs();
+    auto[cycle_vertices, cycle_edges] = fundamental_cycle.to_edges_and_reprs();
 
     // Extract odd vertices, do this before overwriting the node states to allow the assertion to work
+    // We know that the vertex vector starts/ends at the ends of the edge generating the cycle, so the odd indices
+    // correspond to odd vertices in the tree
     std::vector<NodeId> odd_nodes;
     odd_nodes.reserve(cycle_vertices.size() / 2);
     for (size_t i = 1; i < cycle_vertices.size(); i += 2) {
@@ -42,9 +43,10 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(
     }
     assert(odd_nodes.size() == cycle_vertices.size() / 2);
 
+    auto const top_node = fundamental_cycle.path_containing_top_node.back().repr;
     assert(is_even(top_node));
     auto const top_state = get_state(top_node);
-    auto const& top_parent = _parent_node.at(top_node);
+    auto const& top_parent = _parent_edges.at(top_node);
     auto const& top_depth = _depth.at(top_node);
     auto const& shrunken_node = _shrinking.shrink(cycle_vertices);
 #ifndef NDEBUG
@@ -54,7 +56,7 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(
     }
 #endif
     _current_matching.shrink(cycle_vertices, std::move(cycle_edges), shrunken_node);
-    _parent_node.at(shrunken_node) = top_parent;
+    _parent_edges.at(shrunken_node) = top_parent;
     _depth.at(shrunken_node) = top_depth;
     // Set the correct node states
 #ifndef NDEBUG
@@ -74,14 +76,14 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(
     return odd_nodes;
 }
 
-void AlternatingTree::augment_and_unshrink(Representative tree_repr, NodeId tree_node, Representative neighbor) {
+void AlternatingTree::augment_and_unshrink(Representative tree_repr, NodeId tree_node, NodeId neighbor) {
     assert(not _needs_reset);
     assert(get_representative(tree_repr.id()) == tree_repr);
-    assert(get_representative(neighbor.id()) == neighbor);
-    assert(not _current_matching.is_matched(neighbor));
+    assert(get_representative(neighbor).id() == neighbor);
+    assert(not _current_matching.is_matched(Representative(neighbor)));
 
-    std::vector<Representative> path_to_root{neighbor, tree_repr};
-    EdgeList path_edges{{neighbor.id(), tree_node}};
+    std::vector<Representative> path_to_root{Representative(neighbor), tree_repr};
+    EdgeList path_edges{{neighbor, tree_node}};
     while (not is_root(path_to_root.back())) {
         path_edges.push_back(get_edge_to_parent(path_to_root.back()));
         auto const& next_node = get_parent_repr(path_to_root.back());
@@ -123,21 +125,21 @@ void AlternatingTree::set_state(Representative node, NodeStatus new_status) {
 
 Representative AlternatingTree::get_parent_repr(Representative node) const {
     assert(not _needs_reset);
-    return _shrinking.get_representative(_parent_node.at(node).edge_end_parent);
+    return _shrinking.get_representative(_parent_edges.at(node).edge_end_parent);
 }
 
-//TODO node.id() always == link?
-void AlternatingTree::set_parent(Representative node, Representative parent_rep, NodeId parent, NodeId link) {
+void AlternatingTree::set_parent(NodeId non_tree_node, Representative parent_rep, NodeId parent) {
     assert(not _needs_reset);
     assert(is_tree_node(parent_rep));
-    assert(not is_tree_node(node));
-    _parent_node.at(node) = {link, parent};
-    _depth.at(node) = _depth.at(parent_rep) + 1;
-    _tree_vertices.push_back(node.id());
+    Representative non_tree_repr(non_tree_node);
+    assert(not is_tree_node(non_tree_repr));
+    _parent_edges.at(non_tree_repr) = {non_tree_node, parent};
+    _depth.at(non_tree_repr) = _depth.at(parent_rep) + 1;
+    _tree_vertices.push_back(non_tree_node);
     if (is_even(parent_rep)) {
-        set_state(node, odd);
+        set_state(non_tree_repr, odd);
     } else {
-        set_state(node, even);
+        set_state(non_tree_repr, even);
     }
 }
 
@@ -148,7 +150,7 @@ bool AlternatingTree::is_root(Representative node) const {
 AlternatingTree::AlternatingTree(Matching& matching, NodeId root_node)
         : _current_matching(matching),
           _shrinking(_current_matching.total_num_nodes()),
-          _parent_node(_current_matching.total_num_nodes()),
+          _parent_edges(_current_matching.total_num_nodes()),
           _depth(_current_matching.total_num_nodes()),
           _node_states(_current_matching.total_num_nodes()) {
     reset(root_node);
@@ -166,7 +168,7 @@ bool AlternatingTree::is_tree_node(Representative node) const {
 std::pair<NodeId, NodeId> AlternatingTree::get_edge_to_parent(Representative node) const {
     assert(not _needs_reset);
     assert(is_tree_node(node));
-    auto const& parent = _parent_node.at(node);
+    auto const& parent = _parent_edges.at(node);
     return {parent.edge_end_here, parent.edge_end_parent};
 }
 
@@ -218,11 +220,10 @@ NodeId AlternatingTree::get_depth(Representative node) const {
     return _depth.at(node);
 }
 
-std::pair<EdgeList, RepresentativeSet> AlternatingTree::FundamentalCircuit::to_edges_and_reprs() const {
-    RepresentativeSet cycle_reprs;
+std::pair<Representatives, EdgeList> AlternatingTree::FundamentalCircuit::to_edges_and_reprs() const {
+    Representatives cycle_reprs;
     EdgeList cycle_edges{{invalid_node, invalid_node}};
-    auto const& cycle_length = path_without_top_node.size() +
-                               path_containing_top_node.size();
+    auto const& cycle_length = path_without_top_node.size() + path_containing_top_node.size();
     cycle_reprs.reserve(cycle_length);
     cycle_edges.reserve(cycle_length);
     // Go up path containing the top node
@@ -247,5 +248,6 @@ std::pair<EdgeList, RepresentativeSet> AlternatingTree::FundamentalCircuit::to_e
     cycle_edges.pop_back();
 
     assert(cycle_edges.size() == cycle_reprs.size());
-    return {cycle_edges, cycle_reprs};
+    assert(cycle_edges.size() == cycle_length);
+    return {std::move(cycle_reprs), std::move(cycle_edges)};
 }

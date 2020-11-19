@@ -28,7 +28,7 @@ public:
      * @param new_name The representative of the shrunken vertex
      */
     void shrink(
-            RepresentativeSet const& circuit_to_shrink, EdgeList&& circuit_edges, Representative new_name
+            Representatives const& circuit_to_shrink, EdgeList&& circuit_edges, Representative new_name
     );
 
     /**
@@ -38,7 +38,7 @@ public:
      * @param shrinking The shrinking used, with this expansion already done
      */
     void expand(
-            Representative current_name, RepresentativeSet const& expanded_circuit, NestedShrinking const& shrinking
+            Representative current_name, Representatives const& expanded_circuit, NestedShrinking const& shrinking
     );
 
     [[nodiscard]] Representative other_end(Representative known_end) const;
@@ -58,6 +58,7 @@ private:
     /// Maps a representative to the actual vertex used for the incident matching edge
     RepresentativeVector<NodeId> _real_vertex_used_for;
     /// Acts as a stack storing the data needed to undo shrinking operations in addition to the data stored elsewhere
+    /// In this case the data is the actual edges used in the circuit
     std::vector<EdgeList> _shrink_data;
 };
 

@@ -1,6 +1,5 @@
 #include <cassert>
 #include <algorithm>
-#include <iostream>
 #include "nested_shrinking.h"
 
 NestedShrinking::NestedShrinking(size_t num_nodes) : _partition(num_nodes), _set_elements(num_nodes) {
@@ -12,8 +11,10 @@ NestedShrinking::NestedShrinking(size_t num_nodes) : _partition(num_nodes), _set
     validate();
 }
 
-Representative NestedShrinking::shrink(RepresentativeSet const& to_shrink) {
+Representative NestedShrinking::shrink(Representatives const& to_shrink) {
     assert(to_shrink.size() > 1);
+    // Find the largest set (this will be used as the name for the result) and the sum of the set sizes (used to
+    // reserve vector capacity)
     Representative result_representative = to_shrink.at(0);
     size_t total_size = 0;
     auto largest_set_size = get_size(result_representative);
@@ -25,6 +26,7 @@ Representative NestedShrinking::shrink(RepresentativeSet const& to_shrink) {
             largest_set_size = size;
         }
     }
+    // Perform the union step and store the data needed to undo it
     auto& result_set = _set_elements.at(result_representative);
     result_set.reserve(total_size);
     ShrinkStep shrink_info;
@@ -38,6 +40,8 @@ Representative NestedShrinking::shrink(RepresentativeSet const& to_shrink) {
                 _partition.at(element) = result_representative;
             }
             shrink_info.elements.push_back({set_repr, std::move(old_elements)});
+            // old_elements is in an undefined but valid state after moving from it, clearing brings it into a known
+            // state
             old_elements.clear();
         } else {
             shrink_info.elements.push_back({set_repr, {}});
@@ -56,10 +60,10 @@ bool NestedShrinking::is_shrunken() const {
     return not _shrink_stack.empty();
 }
 
-std::pair<RepresentativeSet, Representative> NestedShrinking::expand() {
+std::pair<Representatives, Representative> NestedShrinking::expand() {
     auto shrink_to_undo = std::move(_shrink_stack.back());
     _shrink_stack.pop_back();
-    RepresentativeSet shrunken_vertices;
+    Representatives shrunken_vertices;
     shrunken_vertices.reserve(shrink_to_undo.elements.size());
     size_t non_main_sizes_sum = 0;
     for (auto&& replacement : shrink_to_undo.elements) {

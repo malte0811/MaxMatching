@@ -40,38 +40,40 @@ std::optional<std::vector<NodeId>> PerfectMatchingAlgorithm::calculate_matching_
             if (_tree_for_root.is_tree_node(repr_y)) {
                 if (_tree_for_root.is_even(repr_y)) {
                     auto const& shrunken_odd_nodes = _tree_for_root.shrink_fundamental_circuit(
-                            repr_x, repr_y, end_x, end_y
+                            repr_x, end_x, repr_y, end_y
                     );
                     for (auto const& odd_node : shrunken_odd_nodes) {
                         _edges_to_check.emplace_back(odd_node);
                     }
                 }
             } else if (_current_matching.is_matched(repr_y)) {
-                _tree_for_root.extend(repr_x, repr_y, end_x);
+                _tree_for_root.extend(repr_x, end_x, end_y);
                 _edges_to_check.emplace_back(_current_matching.other_end(repr_y).id());
             } else {
-                _tree_for_root.augment_and_unshrink(repr_x, end_x, repr_y);
+                _tree_for_root.augment_and_unshrink(repr_x, end_x, end_y);
                 augmented = true;
             }
         }
         if (not augmented) {
+            // Tree is frustrated
             _tree_for_root.unshrink();
             return _tree_for_root.get_tree_vertices();
         }
     }
+    // No uncovered (allowed) vertex exists => perfect
     return std::nullopt;
 }
 
 std::optional<NodeId> PerfectMatchingAlgorithm::find_uncovered_vertex() const {
-    auto const& first_guess = _last_root ? *_last_root + 1 : 0;
-    for (auto const&[start, end] : {
-            std::make_pair(first_guess, _graph.num_nodes()),
-            std::make_pair(0U, first_guess),
-    }) {
-        for (NodeId i = start; i < end; ++i) {
-            if (_allowed_vertices.at(i) and not _current_matching.is_matched(Representative(i))) {
-                return i;
-            }
+    auto const& first_potentially_unmatched_node = _last_root ? *_last_root + 1 : 0;
+#ifndef NDEBUG
+    for (NodeId i = 0; i < first_potentially_unmatched_node; ++i) {
+        assert(not _allowed_vertices.at(i) or _current_matching.is_matched(Representative(i)));
+    }
+#endif
+    for (NodeId i = first_potentially_unmatched_node; i < _allowed_vertices.size(); ++i) {
+        if (_allowed_vertices.at(i) and not _current_matching.is_matched(Representative(i))) {
+            return i;
         }
     }
     return std::nullopt;

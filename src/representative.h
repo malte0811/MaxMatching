@@ -22,7 +22,7 @@ private:
     NodeId _id;
 };
 
-using RepresentativeSet = std::vector<Representative>;
+using Representatives = std::vector<Representative>;
 
 //Inline section
 

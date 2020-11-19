@@ -1,4 +1,3 @@
-#include <iostream>
 #include <cassert>
 #include "maximum_matching_algorithm.h"
 #include "perfect_matching_algorithm.h"
