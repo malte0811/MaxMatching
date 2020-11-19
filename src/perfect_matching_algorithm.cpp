@@ -3,11 +3,12 @@
 #include "perfect_matching_algorithm.h"
 #include "alternating_tree.h"
 
-PerfectMatchingAlgorithm::PerfectMatchingAlgorithm(Matching& matching, Graph const& graph, std::vector<char> const& allowed_vertices)
-: _current_matching(matching),
-  _graph(graph),
-  _allowed_vertices(allowed_vertices),
-  _tree_for_root(_current_matching, 0) {
+PerfectMatchingAlgorithm::PerfectMatchingAlgorithm(Matching& matching, Graph const& graph,
+                                                   std::vector<char> const& allowed_vertices)
+        : _current_matching(matching),
+          _graph(graph),
+          _allowed_vertices(allowed_vertices),
+          _tree_for_root(_current_matching, 0) {
     assert(_current_matching.total_num_nodes() == _graph.num_nodes());
     assert(_current_matching.total_num_nodes() == _allowed_vertices.size());
 }
@@ -29,7 +30,7 @@ std::optional<std::vector<NodeId>> PerfectMatchingAlgorithm::calculate_matching_
         bool augmented = false;
         std::optional<Edge> next_edge;
         while (not augmented and (next_edge = get_next_edge())) {
-            auto const& [end_x, end_y] = *next_edge;
+            auto const&[end_x, end_y] = *next_edge;
             auto const& repr_x = _tree_for_root.get_representative(end_x);
             auto const& repr_y = _tree_for_root.get_representative(end_y);
             if (repr_x == repr_y) {
@@ -63,7 +64,7 @@ std::optional<std::vector<NodeId>> PerfectMatchingAlgorithm::calculate_matching_
 
 std::optional<NodeId> PerfectMatchingAlgorithm::find_uncovered_vertex() const {
     auto const& first_guess = _last_root ? *_last_root + 1 : 0;
-    for (auto const& [start, end] : {
+    for (auto const&[start, end] : {
             std::make_pair(first_guess, _graph.num_nodes()),
             std::make_pair(0U, first_guess),
     }) {

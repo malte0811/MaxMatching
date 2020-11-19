@@ -11,7 +11,9 @@
 
 class PerfectMatchingAlgorithm {
 public:
-    explicit PerfectMatchingAlgorithm(Matching& matching, Graph const& graph, std::vector<char> const& allowed_vertices);
+    explicit PerfectMatchingAlgorithm(
+            Matching& matching, Graph const& graph, std::vector<char> const& allowed_vertices
+    );
 
     [[nodiscard]] EdgeList find_perfect_matching();
 

@@ -21,6 +21,7 @@ public:
     [[nodiscard]] ValueT const& at(Representative id) const;
 
     [[nodiscard]] size_t size() const;
+
 private:
     std::vector<ValueT> _internal_vec;
 };
@@ -30,7 +31,7 @@ inline RepresentativeVector<ValueT>::RepresentativeVector(): _internal_vec() {}
 
 template<typename ValueT>
 inline RepresentativeVector<ValueT>::RepresentativeVector(size_t initial_size, ValueT const& value):
-_internal_vec(initial_size, value) {}
+        _internal_vec(initial_size, value) {}
 
 template<typename ValueT>
 inline ValueT& RepresentativeVector<ValueT>::at(Representative id) {

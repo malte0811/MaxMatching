@@ -7,18 +7,16 @@
 
 class MaximumMatchingAlgorithm {
 public:
-    explicit MaximumMatchingAlgorithm(Graph&& graph);
+    explicit MaximumMatchingAlgorithm(Graph const& graph);
 
     EdgeList calc_maximum_matching();
-private:
-    void delete_isolated_nodes();
 
+private:
     void match_leaves();
 
-    Graph _graph;
+    Graph const& _graph;
     Matching _current_matching;
     std::vector<char> _allowed;
-    std::vector<NodeId> _degrees;
     size_t _num_blocked_nodes = 0;
 };
 

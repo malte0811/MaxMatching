@@ -10,13 +10,14 @@ class Representative {
 public:
     explicit Representative(NodeId id);
 
-    Representative(): Representative(0) {}
+    Representative() : Representative(0) {}
 
     [[nodiscard]] NodeId id() const;
 
     bool operator==(Representative other) const;
 
     bool operator!=(Representative other) const;
+
 private:
     NodeId _id;
 };
@@ -36,7 +37,7 @@ inline bool Representative::operator==(Representative other) const {
 }
 
 inline bool Representative::operator!=(Representative other) const {
-    return not (*this == other);
+    return not(*this == other);
 }
 
 #endif //MAXMATCHING_REPRESENTATIVE_H

@@ -26,30 +26,29 @@ using EdgeList = std::vector<Edge>;
 
    @note The neighbors are not necessarily ordered, so searching for a specific neighbor takes O(degree)-time.
 **/
-class Node
-{
+class Node {
 public:
-   /** @brief Create an isolated node (you can add neighbors later). **/
-   Node() = default;
+    /** @brief Create an isolated node (you can add neighbors later). **/
+    Node() = default;
 
-   /** @return The number of neighbors of this node. **/
-   [[nodiscard]] size_type degree() const;
+    /** @return The number of neighbors of this node. **/
+    [[nodiscard]] size_type degree() const;
 
-   /** @return The array of ids of the neighbors of this node. **/
-   [[nodiscard]] std::vector<NodeId> const & neighbors() const;
+    /** @return The array of ids of the neighbors of this node. **/
+    [[nodiscard]] std::vector<NodeId> const& neighbors() const;
 
 private:
-   friend class Graph;
+    friend class Graph;
 
-   /**
-      @brief Adds @c id to the list of neighbors of this node.
-      @warning Does not check whether @c id is already in the list of neighbors (a repeated neighbor is legal, and
-      models parallel edges).
-      @warning Does not check whether @c id is the identity of the node itself (which would create a loop!).
-   **/
-   void add_neighbor(NodeId id);
+    /**
+       @brief Adds @c id to the list of neighbors of this node.
+       @warning Does not check whether @c id is already in the list of neighbors (a repeated neighbor is legal, and
+       models parallel edges).
+       @warning Does not check whether @c id is the identity of the node itself (which would create a loop!).
+    **/
+    void add_neighbor(NodeId id);
 
-   std::vector<NodeId> _neighbors;
+    std::vector<NodeId> _neighbors;
 }; // class Node
 
 /**
@@ -66,69 +65,65 @@ private:
     instead starting at 1, as is done in the DIMACS format that your program should take as input!
     Be careful.
 **/
-class Graph
-{
+class Graph {
 public:
-   /**
-      @brief Creates a @c Graph with @c num_nodes isolated nodes.
+    /**
+       @brief Creates a @c Graph with @c num_nodes isolated nodes.
 
-      The number of nodes in the graph currently cannot be changed. You can only add edges between the existing nodes.
-   **/
-   explicit Graph(NodeId num_nodes);
+       The number of nodes in the graph currently cannot be changed. You can only add edges between the existing nodes.
+    **/
+    explicit Graph(NodeId num_nodes);
 
-   /** @return The number of nodes in the graph. **/
-   [[nodiscard]] NodeId num_nodes() const;
+    /** @return The number of nodes in the graph. **/
+    [[nodiscard]] NodeId num_nodes() const;
 
-   /**
-      @return A reference to the id-th entry in the array of @c Node s of this graph.
-   **/
-   [[nodiscard]] Node const & node(NodeId id) const;
+    /**
+       @return A reference to the id-th entry in the array of @c Node s of this graph.
+    **/
+    [[nodiscard]] Node const& node(NodeId id) const;
 
-   /**
-      @brief Adds the edge <tt> {node1_id, node2_id} </tt> to this graph.
+    /**
+       @brief Adds the edge <tt> {node1_id, node2_id} </tt> to this graph.
 
-      Checks that @c node1_id and @c node2_id are distinct and throws an exception otherwise.
-      This method adds both @c node1_id as a neighbor of @c node2_id and @c node2_id as a neighbor of @c node1_id.
+       Checks that @c node1_id and @c node2_id are distinct and throws an exception otherwise.
+       This method adds both @c node1_id as a neighbor of @c node2_id and @c node2_id as a neighbor of @c node1_id.
 
-      @warning Does not check that the edge does not already exist, so this class can be used to model non-simple graphs.
-   **/
-   void add_edge(NodeId node1_id, NodeId node2_id);
+       @warning Does not check that the edge does not already exist, so this class can be used to model non-simple graphs.
+    **/
+    void add_edge(NodeId node1_id, NodeId node2_id);
 
-   [[nodiscard]] Graph shuffle_with_seed(unsigned long seed) const;
+    [[nodiscard]] Graph shuffle_with_seed(unsigned long seed) const;
 
-   [[nodiscard]] Graph with_extra_all_edge_vertices(NodeId extra_vertices) const;
+    [[nodiscard]] Graph with_extra_all_edge_vertices(NodeId extra_vertices) const;
 
-   /**
-    * Reads a graph in DIMACS format from the given istream and returns that graph.
-    */
-   static Graph read_dimacs(std::istream & str);
+    /**
+     * Reads a graph in DIMACS format from the given istream and returns that graph.
+     */
+    static Graph read_dimacs(std::istream& str);
+
 private:
-   std::vector<Node> _nodes;
+    std::vector<Node> _nodes;
 }; // class Graph
 //BEGIN: Inline section
 
 inline
-size_type Node::degree() const
-{
-   return neighbors().size();
+size_type Node::degree() const {
+    return neighbors().size();
 }
 
 inline
-std::vector<NodeId> const & Node::neighbors() const
-{
-   return _neighbors;
+std::vector<NodeId> const& Node::neighbors() const {
+    return _neighbors;
 }
 
 inline
-NodeId Graph::num_nodes() const
-{
-   return _nodes.size();
+NodeId Graph::num_nodes() const {
+    return _nodes.size();
 }
 
 inline
-Node const & Graph::node(NodeId const id) const
-{
-   return _nodes[id];
+Node const& Graph::node(NodeId const id) const {
+    return _nodes[id];
 }
 
 #endif /* GRAPH_HPP */

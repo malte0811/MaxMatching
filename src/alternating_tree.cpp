@@ -20,7 +20,9 @@ void AlternatingTree::extend(Representative tree_repr, Representative matched_re
     set_parent(matched_end, matched_repr, matched_repr.id(), matched_end.id());
 }
 
-std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative repr_a, Representative repr_b, NodeId node_a, NodeId node_b) {
+std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(
+        Representative repr_a, Representative repr_b, NodeId node_a, NodeId node_b
+) {
     assert(not _needs_reset);
     assert(get_representative(repr_a.id()) == repr_a);
     assert(get_representative(repr_b.id()) == repr_b);
@@ -28,7 +30,7 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
     assert(is_even(repr_b));
     auto const& fundamental_cycle = find_fundamental_circuit(repr_a, repr_b, node_a, node_b);
     auto const top_node = fundamental_cycle.path_containing_top_node.back().repr;
-    auto [cycle_edges, cycle_vertices] = fundamental_cycle.to_edges_and_reprs();
+    auto[cycle_edges, cycle_vertices] = fundamental_cycle.to_edges_and_reprs();
 
     // Extract odd vertices, do this before overwriting the node states to allow the assertion to work
     std::vector<NodeId> odd_nodes;
@@ -56,6 +58,8 @@ std::vector<NodeId> AlternatingTree::shrink_fundamental_circuit(Representative r
     _depth.at(shrunken_node) = top_depth;
     // Set the correct node states
 #ifndef NDEBUG
+    // Only set "not_representative" when assertions are enabled, its only use is to detect issues where those vertices
+    // are accessed by accident
     for (Representative node : cycle_vertices) {
         if (node != shrunken_node) {
             assert(top_state == root or get_state(node) != root);

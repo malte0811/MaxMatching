@@ -63,7 +63,7 @@ std::pair<RepresentativeSet, Representative> NestedShrinking::expand() {
     shrunken_vertices.reserve(shrink_to_undo.elements.size());
     size_t non_main_sizes_sum = 0;
     for (auto&& replacement : shrink_to_undo.elements) {
-        if(replacement.old_name != shrink_to_undo.new_name) {
+        if (replacement.old_name != shrink_to_undo.new_name) {
             for (auto const& replaced_node : replacement.affected_nodes) {
                 _partition.at(replaced_node) = replacement.old_name;
             }

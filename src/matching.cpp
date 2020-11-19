@@ -31,7 +31,9 @@ void Matching::add_edge(NodeId end_a, NodeId end_b) {
     validate();
 }
 
-void Matching::augment_along(std::vector<Representative> const& path, std::vector<std::pair<NodeId, NodeId>> const& edges) {
+void Matching::augment_along(
+        std::vector<Representative> const& path, std::vector<std::pair<NodeId, NodeId>> const& edges
+) {
     assert(not is_matched(path.front()));
     assert(not is_matched(path.back()));
     assert(path.size() % 2 == 0);
@@ -60,6 +62,7 @@ void Matching::shrink(RepresentativeSet const& circuit_to_shrink, EdgeList&& cir
     for (size_t i = 0; i < circuit_to_shrink.size(); ++i) {
         auto const& vertex = circuit_to_shrink.at(i);
         auto const& matched_to = _matched_vertices.at(vertex);
+        // The node can only be matched to one of two vertices in the circuit: The one right after or right before it
         bool matched_to_node_in_circuit = false;
         for (auto const& offset : {-1, 1}) {
             auto const& index = (i + circuit_to_shrink.size() + offset) % circuit_to_shrink.size();
@@ -72,7 +75,6 @@ void Matching::shrink(RepresentativeSet const& circuit_to_shrink, EdgeList&& cir
             assert(not edge_to_outside);
             edge_to_outside = {vertex, matched_to};
         } else {
-            // TODO probably a waste of time
             _matched_vertices.at(vertex) = vertex;
         }
     }
@@ -138,7 +140,7 @@ size_t Matching::total_num_nodes() const {
     return _matched_vertices.size();
 }
 
-void Matching::validate([[maybe_unused]]NestedShrinking const* shrinking) const{
+void Matching::validate([[maybe_unused]]NestedShrinking const* shrinking) const {
 #ifndef NDEBUG
     for (NodeId i = 0; i < total_num_nodes(); ++i) {
         Representative repr(i);

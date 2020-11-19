@@ -27,7 +27,9 @@ public:
      * R(circuit_edges[i+1].first) == R(circuit_edges[i].second) == circuit_to_shrink[i]
      * @param new_name The representative of the shrunken vertex
      */
-    void shrink(RepresentativeSet const& circuit_to_shrink, EdgeList&& circuit_edges, Representative new_name) __attribute__((noinline));
+    void shrink(
+            RepresentativeSet const& circuit_to_shrink, EdgeList&& circuit_edges, Representative new_name
+    );
 
     /**
      * Expands an odd circuit previously shrunken using "shrink"
@@ -35,7 +37,9 @@ public:
      * @param expanded_circuit The vertices of the circuit, in the same order as used to shrink the circuit
      * @param shrinking The shrinking used, with this expansion already done
      */
-    void expand(Representative current_name, RepresentativeSet const& expanded_circuit, NestedShrinking const& shrinking);
+    void expand(
+            Representative current_name, RepresentativeSet const& expanded_circuit, NestedShrinking const& shrinking
+    );
 
     [[nodiscard]] Representative other_end(Representative known_end) const;
 

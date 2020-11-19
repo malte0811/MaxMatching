@@ -10,11 +10,13 @@ int main(int argc, char** argv) {
         return 1;
     }
     try {
+        // Debug output: Do not dump the (potentially massive) matching edge list, log time for parsing vs solving
+        // instead
 #ifdef DEBUG_OUTPUT
         auto const& parsing_start = std::chrono::system_clock::now();
 #endif
         std::ifstream input(argv[1]);
-        auto g = Graph::read_dimacs(input);
+        auto const g = Graph::read_dimacs(input);
 #ifdef DEBUG_OUTPUT
         std::cout << "Parsing done\n";
         auto const& parsing_done = std::chrono::system_clock::now();
@@ -28,9 +30,10 @@ int main(int argc, char** argv) {
         auto const& end = std::chrono::system_clock::now();
         auto const& matching = std::chrono::duration_cast<std::chrono::milliseconds>(end - parsing_done);
         std::cout << "Matching time: " << matching.count() / 1e3 << " s\n";
-#else
+#endif
         std::cout << "p edge " << num_nodes << " " << matching_edges.size() << '\n';
-        for (auto const& [end_a, end_b] : matching_edges) {
+#ifndef DEBUG_OUTPUT
+        for (auto const&[end_a, end_b] : matching_edges) {
             std::cout << "e " << (end_a + 1) << ' ' << (end_b + 1) << '\n';
         }
 #endif

@@ -21,6 +21,7 @@ public:
     [[nodiscard]] Representative get_representative(NodeId node) const;
 
     [[nodiscard]] bool is_shrunken() const;
+
 private:
     struct SetReplacement {
         Representative old_name;

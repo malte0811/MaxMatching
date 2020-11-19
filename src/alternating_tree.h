@@ -27,21 +27,27 @@ public:
     void reset(NodeId root_node);
 
     [[nodiscard]] std::vector<NodeId> get_tree_vertices() const;
+
 private:
     static auto constexpr invalid_node = std::numeric_limits<NodeId>::max();
 
     struct Parent {
+        // Nodes within the pseudonode on the edge used to connect the pseudonodes
         NodeId edge_end_here;
         NodeId edge_end_parent;
     };
+
     struct FundamentalCircuit {
         struct NodeInfo {
+            // pseudonode
             Representative repr;
+            // Nodes within the pseudonodes for the edges above (closer to the root) and below this node
             NodeId below;
             NodeId above;
         };
         std::vector<NodeInfo> path_containing_top_node;
         std::vector<NodeInfo> path_without_top_node;
+        //Node in the top pseudonode used to attach the path without the top node
         NodeId other_vertex_used_at_top;
 
         [[nodiscard]] std::pair<EdgeList, RepresentativeSet> to_edges_and_reprs() const;
@@ -52,7 +58,6 @@ private:
         even,
         odd,
         root,
-        //TODO remove or semi-disable using preprocessor commands?
         not_representative,
     };
 

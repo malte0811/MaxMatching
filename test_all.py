@@ -35,7 +35,9 @@ known_optima = {
     "queen8_8.dmx": 32,
     "queen9_9.dmx": 40,
     "simple.dmx": 2,
-    "xqf131.dmx": 64
+    "xqf131.dmx": 64,
+    "USA-road-d.FLA.dmx": 507967,
+    "USA-road-d.USA.dmx": 11325669,
 }
 
 for file in listdir(args.test_folder):
